@@ -1,0 +1,21 @@
+amends "..."
+
+// We use onepassword for secrets, ask for a valt in onepassword if you do not have one
+
+// +module.env = ennviront, eg. acc or prod
+// This means you can describe items once and just append "acc" or "prod" to the item name in onepassword
+
+passwordItems {
+  new {
+    name = "accessdatabase-"+module.env
+    itemPath = "vaults/example/items/accessdatabase"+module.env // Refers to the item in onepassword: accessdatabase_acc and accessdatabase_prod
+  }
+  new {
+    name = "topsecrets-"+module.env
+    itemPath = "vaults/example/items/topsecrets"+module.env // Refers to the item in onepassword: topsecrets_acc and topsecrets_prod
+  }
+  new {
+    name = "shared-secret"
+    itemPath = "vaults/example/items/shared-secret" // Both environments will use the same item
+  }
+}

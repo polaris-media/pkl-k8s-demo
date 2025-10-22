@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: batmobile
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/polaris-media/pkl-k8s-demo.git
+        revision: refs/heads/main
+        directories:
+          - path: manifest/*/*/pr/*
+
+  template:
+    metadata:
+      name: '{{ index .path.segments 2 }}-{{ index .path.segments 3 }}-{{ index .path.segments 4 }}'
+      labels:
+        team: '{{ index .path.segments 1 }}'
+    spec:
+      ignoreDifferences:
+        - group: ""
+          kind: Secret
+          jsonPointers:
+            - /data
+      project: "default"
+      source:
+        repoURL: https://github.com/polaris-media/pkl-k8s-demo.git
+        targetRevision: refs/heads/main
+        path: 'manifest/{{ index .path.segments 1 }}/{{ index .path.segments 2 }}/{{ index .path.segments 3 }}/{{ index .path.segments 4 }}/'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ index .path.segments 2 }}-{{ index .path.segments 3 }}-{{ index .path.segments 4 }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

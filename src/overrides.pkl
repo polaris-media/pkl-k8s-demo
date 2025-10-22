@@ -1,0 +1,161 @@
+amends   "defaults.pkl"
+
+
+images {
+  [module.app] {
+    image = "polarisit/thisShouldBeOverriddenInAppFolder:v1.2.3"
+  }
+}
+
+isDatadogEnabled = false
+isDatadogLogsEnabled = false
+includeHealthCheck = true
+includeIngress = true
+includeHorizontalPodAutoscaler = true
+includeService = true
+includePodDisruptionBudgets = false
+includeStorageNfsEpehemeral = false
+includeStorageNfsPersistent = false
+includeDefaultPrivateIngress = true
+
+
+// Initiates the most common resources for the app and uses the default values.
+publicIngressRules {}
+privateIngressRules {}
+passwordItems {}
+
+ingresses {
+  when (includeIngress) {
+    [module.app] {
+      spec {
+        rules {
+          for (pir in privateIngressRules) {
+            new {
+              host = pir.host
+              http {
+                paths {
+                  for (pathy in pir.paths) {
+                    new {
+                      path = pathy
+                      pathType = "Prefix"
+                      backend {
+                        service {
+                          name = module.app
+                          port {
+                            number = pir.port
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+publicIngresses {
+  when ( !publicIngressRules.isEmpty) {
+    [module.app + "-public"] {
+      spec {
+        rules {
+          for (pir in publicIngressRules) {
+            new {
+              host = pir.host
+              http {
+                paths {
+                  for (pathy in pir.paths) {
+                    new {
+                      path = pathy
+                      pathType = "Prefix"
+                      backend {
+                        service {
+                          name = module.app
+                          port {
+                            number = pir.port
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+  horizontalPodAutoscalers {
+    when (includeHorizontalPodAutoscaler) {
+      [module.app] {}
+    }
+  }
+  services {
+    when (includeService) {
+      [module.app] {}
+    }
+  }
+  deployments {
+    [module.app] {}
+  }
+
+onePasswordItems {
+  for (pass in passwordItems) {
+    [pass.name] {
+      metadata {
+        annotations {
+          ["operator.1password.io/auto-restart"] = pass.autoRestart.toString()
+        }
+        labels {
+          ["app"] = module.app
+          ["env"] = module.env
+          ["team"] = module.team
+        }
+      }
+      spec {
+        itemPath = pass.itemPath
+      }
+    }
+  }
+  when ( includeSlackErrorMessageOnSync || includeSlackSuccessMessageOnSync ){
+
+    [module.app + "-slack-notify"] {
+      metadata {
+        annotations {
+          ["operator.1password.io/auto-restart"] = "true"
+        }
+        labels {
+          ["app"] = module.app
+          ["env"] = module.env
+          ["team"] = module.team
+        }
+      }
+      spec {
+        itemPath = "vaults/dev/items/Argocd-slackbot-oauth"
+      }
+    }
+  }
+}
+
+podDisruptionBudgets {
+    [module.app] {}
+}
+
+
+configMaps {
+  [module.app] {  }
+}
+
+
+// nice to have. Used to debug stuff, overrides the default output.
+// example: run pkl eval src/polarx/polarpaw-api/acc/overrides.pkl to output values of variables
+//output {
+ // text = "this is the final output  "+ module.configMapName
+//}

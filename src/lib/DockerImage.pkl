@@ -1,0 +1,5 @@
+open module no.polarismedia.pkltime.DockerImage
+
+image: String
+imageName = image.split(":")[0]
+imageTag = image.split(":")[1]

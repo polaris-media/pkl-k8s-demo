@@ -1,0 +1,16 @@
+amends "..."
+
+
+
+images {
+  [module.app] {
+    image = "polarisit/secrets:0.3.12"
+  }
+}
+
+passwordItems {
+  new {
+    name = "specific-secret"
+    itemPath = "vaults/example/items/specific-secret" // This specific secret will just be used by acc env
+  }
+}

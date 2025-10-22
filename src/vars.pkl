@@ -1,0 +1,178 @@
+/// This module contains variables and configurations for our kubernetes applications
+/// It extends the TeamAppEnv.pkl module and provides additional configurations specific to Polaris Media applications.
+/// It includes settings for Kubernetes resources, resource limits, health checks, and integration with 1Password and Datadog.
+/// Which can be overridden in each app's override.pkl file.
+open module no.polarismedia.pkl.Vars
+extends "TeamAppEnv.pkl"
+import "./lib/Helper.pkl"
+import "./lib/ResourceLimits.pkl"
+import "./lib/CommandAndArgs.pkl"
+import "@k8s/K8sObject.pkl"
+
+
+
+/// The topdomain name for the app
+hidden topLevelDomain = "fnatt.no"
+
+/// Enables datadog
+hidden isDatadogEnabled: Boolean = false
+
+/// Enables datadog logs
+hidden isDatadogLogsEnabled: Boolean = false
+
+/// Enables datadog APM
+hidden isDatadogApmLogsEnabled: Boolean = false
+
+/// Datadog log source, default is "k8s"
+hidden datadogLogSource: String = "k8s"
+
+/// The version of dd-trace-js datadog use to autoinject  check https://github.com/DataDog/dd-trace-js/releases/
+hidden datadogJsLibVersion = "v5.67.0"
+/// The version of the datadog Java library we use. Check https://github.com/DataDog/dd-trace-java/releases for the latest version.
+hidden datadogJavaLibVersion = "v1.48.1"
+
+/// The technology we use for this app, default is nodejs
+hidden tech: Helper.TechChoices = "nodejs"
+
+hidden includeHealthCheck: Boolean = true
+hidden includeIngress: Boolean = true
+hidden includeDefaultPrivateIngress: Boolean = true
+hidden includeHorizontalPodAutoscaler: Boolean = true
+hidden includeService: Boolean = true
+
+/// Enables topology spread constraints for pods in the Deployment spec.
+hidden includeTopologySpreadConstraints: Boolean = false
+
+/// HTTP path used by liveness and readiness probes
+hidden probePath = "/health/status"
+
+/// Port used by liveness and readiness probes
+hidden probePort: Int = 8080
+
+/// Seconds to wait before performing the first probe
+hidden probeInitialDelaySeconds: Int = 10
+
+/// Seconds between each probe check
+hidden probePeriodSeconds: Int = 3
+
+/// Enable a startupProbe in addition to liveness and readiness probes
+hidden includeStartupProbe: Boolean = false
+
+/// Seconds to wait before performing the first startup probe
+hidden startupProbeInitialDelaySeconds: Int = 0
+
+/// Seconds between each startup probe check
+hidden startupProbePeriodSeconds: Int = 10
+
+/// Number of failed startup probe attempts before the container is restarted
+hidden startupProbeFailureThreshold: Int = 30
+
+/// Inject CA bundle to support outbound connections through SSL Inspection
+///
+/// Ads "NODE_EXTRA_CA_CERTS", allows node to trust the CA bundle.
+///
+/// If mode apps needs env variables add them to PKL.
+hidden isInjectCaEnabled: Boolean = true
+
+/// Enable default security context for the pod and containers.
+///
+/// Disallows typical unsafe actions.
+///
+/// Enforced by the Kubernetes kyverno policie's
+hidden isSecurityContextEnabled: Boolean = false
+
+/// Variable for configMap name + the md5 hash of the configMap data, ensures that the configMap is unique and changes when the data changes.
+hidden configMapName = module.app + "-" + module.configMaps[module.app].toString().md5.substring(0, 8)
+
+/// Includes a PodDisruptionBudget for the app. PodDisruptionBudget is used to limit the number of pods that can be disrupted during voluntary disruptions, such as node maintenance or scaling operations.
+hidden includePodDisruptionBudgets: Boolean = false
+
+/// Sets a user which the container (pod) runs as user must be non-root
+///
+/// Default is user 1000 which is the default user in the node image
+///
+/// This can be overridden in the app overrtide.pkl
+///
+/// Should be useed when we need to explicitly set the user id in kubernetes
+///
+/// runAsUser is the user id the container runs as, cannot be 0 (root)
+///
+/// Should be useed when we need to explicitly set the user id in kubernetes
+hidden runAsUser: Int = -1
+
+/// Storage for your container (type NFS), this type is ephemeral and will be deleted when your deployment/app is deleted
+///
+/// Override default path "/volume/ephemeral" inside the container and set your own path with var "storagePathNfsEphemeral"
+hidden includeStorageNfsEpehemeral: Boolean = false
+
+/// Storage path inside of the container for ephemeral NFS storage, default: /volume/ephemeral
+///
+/// examples: /tmp/cache, /var/log, /app/tmp
+///
+/// Path is where you can stor your data to make sure it survives a deployment, restart or crash etc.
+hidden storagePathNfsEphemeral = "/volume/ephemeral"
+
+/// storage for your container (type NFS), this type is persistent and the data will be kept
+///
+/// Override default path "/volume/persistent" inside the container and set your own path with var "storagePathNfsPersistent"
+hidden includeStorageNfsPersistent: Boolean = false
+
+/// Storage path inside of the container for persistent NFS storage, default: /volume/persistent 
+///
+/// examples: /var/redis, /data/sql, /app/styles
+///
+/// Path is where you can stor your data to make sure it survives a deployment, restart or crash etc.
+hidden storagePathNfsPersistent = "/volume/persistent"
+
+/// fsGroup sets which group should own files in volumes like nfs, default is usually fine
+hidden fsGroup = 1000
+
+/// List of xkeys in string format, separated by spaces.
+/// Purges edge-varnish on deploy.
+/// It automatically selects the correct environment, eg. an acc deploy will purge acc.
+/// PR environment will not trigger a purge.
+/// 
+/// Example: purgeXkeysEdgeVarnish = "CORE-PAGES FRONTPAGE-ARTICLES AND-SO-ON"
+hidden purgeXkeysEdgeVarnish = ""
+
+/// List of xkeys in string format, separated by spaces.
+/// Purges paw-varnish on deploy.
+/// It automatically selects the correct environment, eg. an acc deploy will purge acc.
+/// PR environment will not trigger a purge.
+/// 
+/// Example: purgeXkeysPawVarnish = "CORE-PAGES FRONTPAGE-ARTICLES AND-SO-ON"
+hidden purgeXkeysPawVarnish = ""
+
+/// Local variable to get the resource limits for the given tech and environment
+local reLimits = ResourceLimits.getResourceLimits( tech, env )
+
+/// The maximum CPU allowed; exceeding this causes CPU throttling (slowed performance). Value is in cores. Datatype int or float. So 1.0 = 1 core, 2.0 = 2 cores, etc.
+hidden resourceLimitsCpu: K8sObject.Quantity = reLimits.resourceLimitsCpu
+
+/// The maximum memory allowed; exceeding this triggers container termination (OOM kill and restart). Valid syntax 2.gib, 512.mib, 2.kib.
+hidden resourceLimitsMemory: K8sObject.Quantity = reLimits.resourceLimitsMemory
+
+/// The minimum CPU guaranteed; scheduler ensures this resource is always available to the container. Datatype int or float. So 1.0 = 1 core, 2.0 = 2 cores, etc..
+hidden resourceRequestsCpu: K8sObject.Quantity = reLimits.resourceRequestsCpu
+
+/// The minimum memory guaranteed; scheduler ensures this resource is always available to the container. Valid syntax 2.gib, 512.mib, 2.kib.
+hidden resourceRequestsMemory: K8sObject.Quantity = reLimits.resourceRequestsMemory
+
+/// Includes a slack notification on deploy success
+/// This will send a message to the deployStatusSlackChannel if the deploy is successful
+hidden includeSlackSuccessMessageOnSync: Boolean = false
+/// Includes a slack notification on deploy failure
+/// This will send a message to the deployStatusSlackChannel if the deploy fails
+hidden includeSlackErrorMessageOnSync: Boolean = false
+
+/// This is the channel where the deploy status messages will be sent. Bot have to be added to the channel with the following message "@Argo CD Status hello there :banana_dance:"
+hidden deployStatusSlackChannel = "tek-notifications-argocd"
+
+/// Command and args to run in the container, this is used to override the default command and args in the container image.
+/// Example:
+/// commandAndArgs = new {
+///   command { "node" }
+///   args { "./src/index.js" }
+///   }
+hidden commandAndArgs: CommandAndArgs
+

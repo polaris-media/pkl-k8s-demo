@@ -1,0 +1,15 @@
+amends "..."
+
+// Sometimes we don't want an app to scale to more than X number of replicas
+// Or maybe we should have 1 in prod instead of 2 as minumum
+
+
+// This will apply to both environments and enforce the app to just run with 1 replica
+horizontalPodAutoscalers {
+    [module.app] {
+        spec {
+        minReplicas = 1 // minimum 1 (Default is 2 in production)
+        maxReplicas = 1 // limit 1 (Default is 19 in production)
+        }
+    }
+}

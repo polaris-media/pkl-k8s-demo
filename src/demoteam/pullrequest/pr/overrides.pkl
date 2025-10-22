@@ -1,0 +1,12 @@
+amends "..."
+
+// Common configuration for the pr's
+
+configMaps {
+  [module.app] {
+    data {
+      ["hello-world"] = "Hello, world!"
+      ["override-me"] = "Ping, pong!"
+    }
+  }
+}

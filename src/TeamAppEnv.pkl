@@ -1,0 +1,142 @@
+/// Inspired by AppEnvCluster template for Kubernetes resources.
+open module no.polarismedia.pkl.TeamAppEnv
+
+import "pkl:reflect"
+import "@k8s/K8sObject.pkl"
+import "@k8s/api/apps/v1/Deployment.pkl"
+import "@k8s/api/apps/v1/StatefulSet.pkl"
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/PersistentVolumeClaim.pkl"
+import "@k8s/api/core/v1/Pod.pkl"
+import "@k8s/api/core/v1/Secret.pkl"
+import "@k8s/api/core/v1/Service.pkl"
+import "@k8s/api/networking/v1/Ingress.pkl"
+import "@k8s/api/autoscaling/v2/HorizontalPodAutoscaler.pkl"
+import "@k8s/api/policy/v1/PodDisruptionBudget.pkl"
+import "@k8s/api/batch/v1/Job.pkl"
+import "@k8s/api/core/v1/Namespace.pkl"
+import "./lib/DockerImage.pkl"
+import "./lib/OnePasswordItem.pkl"
+import "./lib/PasswordItem.pkl"
+import "./lib/PublicIngressRule.pkl"
+
+
+configMaps: Mapping<String, ConfigMap> = resourceMapping(ConfigMap)
+deployments: Mapping<String, Deployment> = resourceMapping(Deployment)
+ingresses: Mapping<String, Ingress> = resourceMapping(Ingress)
+persistentVolumeClaims: Mapping<String, PersistentVolumeClaim> = resourceMapping(PersistentVolumeClaim)
+pods: Mapping<String, Pod> = resourceMapping(Pod)
+secrets: Mapping<String, Secret> = resourceMapping(Secret)
+services: Mapping<String, Service> = resourceMapping(Service)
+statefulSets: Mapping<String, StatefulSet> = resourceMapping(StatefulSet)
+podDisruptionBudgets: Mapping<String, PodDisruptionBudget> = resourceMapping(PodDisruptionBudget)
+horizontalPodAutoscalers: Mapping<String, HorizontalPodAutoscaler> = resourceMapping(HorizontalPodAutoscaler)
+onePasswordItems: Mapping<String, OnePasswordItem> = resourceMapping(OnePasswordItem)
+namespaces: Mapping<String, Namespace> = resourceMapping(Namespace)
+publicIngresses: Mapping<String, Ingress> = resourceMapping(Ingress)
+jobs: Mapping<String, Job> = resourceMapping(Job)
+
+
+/// Validates that the Kubernetes resource names are compliant with the naming conventions.
+/// Lowercase alphanumeric characters, '-' and '.' are allowed.
+/// Names must start and end with an alphanumeric character.
+local isValidKubernetesResourceName = (str: String) -> str.matches(Regex(#"[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"#))
+hidden path: List<String> = findRootModule(reflect.Module(module)).relativePathTo(module)
+
+// temporary varibles to hold the path components, to make it easier to read
+local _app = path[1]
+local _env = path[2]
+local _pr = path[3]
+
+hidden team: String(isValidKubernetesResourceName) = path[0]
+hidden env: String(isValidKubernetesResourceName) = if (_env.startsWith("pr-")) "pr" else _env
+hidden app: String(isValidKubernetesResourceName) = computeAppName()
+hidden pr: String(isValidKubernetesResourceName) = _pr
+
+local function computeAppName(): String =
+  if (_env.startsWith("pr-")) _app + "-" + _env
+  else if (_env == "pr") _app + "-" + _env + "-" + _pr
+  else _app
+
+
+hidden serviceName: String = module.app
+
+
+hidden publicIngressRules: Listing<PublicIngressRule> = new Listing<PublicIngressRule>{}
+hidden privateIngressRules: Listing<PublicIngressRule> = new Listing<PublicIngressRule>{}
+
+/// Internal ingress annotations to configure inbound traffic rules
+/// applies to my-app.env.fnatt.no
+///
+/// Websocket is a typical use case, to increase the timeout for websocket connections
+hidden privateIngressAnnotations: Mapping = new Mapping{}
+
+/// Public ingress annotations to configure inbound traffic rules
+/// Requires a public ingress to be defined
+///
+/// Websocket is a typical use case, to increase the timeout for websocket connections
+hidden publicIngressAnnotations: Mapping = new Mapping{}
+
+hidden passwordItems: Listing<PasswordItem> = new Listing<PasswordItem>{}
+
+
+hidden images: Mapping = new Mapping {
+  [module.app] = new DockerImage {
+    image = "polarisit/thisShouldBeOverriddenInAppFolder:v1.2.3"
+  }
+}
+
+
+local function sortConfigMapData(resource) =
+  if (!(resource is ConfigMap)) resource
+  else
+    let (configMap = resource as ConfigMap)
+      let (existingData = configMap.data)
+        if (existingData == null) resource
+        else (configMap) {
+          data = new Mapping<String, String> {
+            for (key in existingData.keys.sort()) {
+              [key] = existingData[key]
+            }
+          }
+        }
+
+
+output {
+  renderer = new YamlRenderer {
+    isStream = true
+    converters = (K8sObject.output.renderer as YamlRenderer).converters
+  }
+  value =
+    if (isLeafModule())
+      module.toMap().values.flatMap((it) -> it.toMap().values).map((resource) -> sortConfigMapData(resource))
+    else
+      List()
+
+}
+
+//local function toYamlString(obj: Object): String = output.renderer.renderValue(obj)
+local function resourceMapping(type): Mapping<String, unknown> =
+  new Mapping { default = (key) -> (type)
+    {
+      metadata {
+        name = key
+        labels {
+          ["app"] = app
+          ["env"] = env
+          ["team"] = team
+        }
+      }
+    }
+  }
+
+/// Returns true if the module is a leaf module, meaning it has no subfolders. I.e., if the path length is 3, we know its the bottom of the folder structure.
+local function isLeafModule(): Boolean = ( path.length == 3 && env != "pr" ) || ( path.length == 4 && env == "pr" )
+
+local function findRootModule(mod: reflect.Module): Module =
+  let (supermodule = mod.supermodule)
+    if (supermodule == null || !supermodule.isAmend) mod.reflectee
+    else findRootModule(supermodule)
+
+
+

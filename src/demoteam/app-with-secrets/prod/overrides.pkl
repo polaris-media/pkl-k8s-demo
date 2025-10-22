@@ -1,0 +1,15 @@
+amends "..."
+
+
+images {
+  [module.app] {
+    image = "polarisit/secrets:0.3.12"
+  }
+}
+
+passwordItems {
+  new {
+    name = "very-very-specific-secret"
+    itemPath = "vaults/example/items/very-very-specific-secret" // This very specific secret will just be used by prod env
+  }
+}

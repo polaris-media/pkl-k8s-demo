@@ -1,0 +1,15 @@
+amends "..."
+
+isDatadogLogsEnabled = false
+isDatadogEnabled = false
+isDatadogApmLogsEnabled = false
+
+
+includeHealthCheck = false
+
+images {
+  [module.app] {
+    image = "polarisit/ohj-test-project:v1.0.531"
+  }
+}
+

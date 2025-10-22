@@ -1,0 +1,53 @@
+{
+  "extends": [
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^PklProject$/"
+      ],
+      "matchStrings": [
+        "uri\\s*=\\s\"package://pkg\\.pkl-lang\\.org/(?<depName>[^@\"]+)@(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "pkl",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^PklProject.deps.json$/"
+      ],
+      "matchStrings": [
+        "\"uri\": \"projectpackage://pkg\\.pkl-lang\\.org/(?<depName>[^@\"]+)@(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "pkl",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^src/vars\\.pkl$/"
+      ],
+      "matchStrings": [
+        "hidden datadogJsLibVersion\\s*=\\s*\\\"v(?<currentValue>v?\\d+\\.\\d+\\.\\d+)\\\""
+      ],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "dd-trace",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^src/vars\\.pkl$/"
+      ],
+      "matchStrings": [
+        "hidden datadogJavaLibVersion\\s*=\\s*\"v(?<currentValue>v?\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "maven",
+      "depNameTemplate": "com.datadoghq:dd-java-agent",
+      "versioningTemplate": "semver"
+    }
+  ]
+}

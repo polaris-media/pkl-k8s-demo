@@ -1,0 +1,8 @@
+amends "..."
+
+// Purge till trigger on every deploy (per environment)
+// It will also trigger if you do a manual sync or major changes to flux (very rarely)
+
+// Applies to both environments but "acc" will purge polarx and prod will purge www
+// Set per environment if you need to differentiate between xkeys
+purgeXkeysEdgeVarnish = "CORE-PAGES FRONT-STUFF polarbear other xkey"

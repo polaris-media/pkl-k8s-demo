@@ -1,0 +1,8 @@
+amends "..."
+
+
+// Add a custom command and args to the container which will override the default set in the Dockerfile
+commandAndArgs = new {
+  command { "node" }
+  args { "./index.js" }
+}

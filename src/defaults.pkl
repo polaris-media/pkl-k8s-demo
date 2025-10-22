@@ -1,0 +1,650 @@
+amends "vars.pkl"
+// Default values for most of the resources. These values can be overridden in overrides.pkl
+
+onePasswordItems {
+  default {
+    metadata {
+      annotations {
+        ["operator.1password.io/auto-restart"] = "true"
+        ["argocd.argoproj.io/hook"] = "PreSync"
+      }
+    }
+  }
+}
+// The private ingress is used to allow access to the application from within the firewall.
+// Adds a default private ingress module.app.<env>.<topLevelDomain> with path /
+
+privateIngressRules {
+  when ( includeDefaultPrivateIngress ) {
+    new {
+      host = module.app + "." + module.env + "." + module.topLevelDomain
+      paths = List("/")
+    }
+  }
+}
+
+
+/**
+  * The configMap is used to store environment variables that are used by the application.
+  * The values are stored in the data field.
+  * Default values already set is:
+  * - DD_ENV: module.env
+  * - DD_LOGS: "[{\"source\":\"" + module.datadogLogSource + "\", \"service\":\"" + module.serviceName + "\", \"version\":\"" + module.images[module.app].imageTag + "\"}]"
+  * - DD_SERVICE: module.serviceName
+  * - DD_VERSION: module.images[module.app].imageTag
+  * - LOG_LEVEL: "info"
+  * - NODE_ENV: module.env
+  * - PORT: "8080"
+  */
+configMaps {
+  default {
+    metadata {
+      name = module.configMapName
+    }
+    data {
+      ["DD_ENV"] = module.env
+      ["DD_LOGS"] = "[{\"source\":\"" + module.datadogLogSource + "\", \"service\":\"" + module.serviceName + "\", \"version\":\"" + module.images[module.app].imageTag + "\"}]"
+      ["DD_SERVICE"] = module.serviceName
+      ["DD_VERSION"] = module.images[module.app].imageTag
+      ["LOG_LEVEL"] = "info"
+      ["PORT"] = "8080"
+    }
+  }
+}
+
+deployments {
+  default {
+    metadata {
+      labels {
+        when (module.isDatadogEnabled) {
+          ["tags.datadoghq.com/env"] = module.env
+          ["tags.datadoghq.com/service"] = module.serviceName
+          ["tags.datadoghq.com/version"] = module.images[module.app].imageTag
+        }
+      }
+    }
+    spec {
+      selector {
+        matchLabels {
+          ["team"] = module.team
+          ["app"] = module.app
+          ["env"] = module.env
+        }
+      }
+      when (module.env == "tullerundt") {
+        strategy {
+          type = "RollingUpdate"
+          rollingUpdate {
+            maxUnavailable = "0%" // 0 pods can be unavailable during a deployment
+            maxSurge = "50%" // 50% more pods can be created during a deployment, not counting terminating pods
+          }
+        }
+        progressDeadlineSeconds = 300 // Mark as failed if not ready in 5 minutes
+        minReadySeconds = 5 // Ensure pods are ready before scaling down old replicaset, does not affect readiness/liveness probes and traffic
+      }
+      template {
+        metadata {
+          labels {
+            ["team"] = module.team
+            ["app"] = module.app
+            ["env"] = module.env
+            when (module.isDatadogEnabled) {
+              ["tags.datadoghq.com/env"] = module.env
+              ["tags.datadoghq.com/service"] = module.serviceName
+              ["tags.datadoghq.com/version"] = module.images[module.app].imageTag
+              ["admission.datadoghq.com/enabled"] = module.isDatadogApmLogsEnabled.toString() //todo revise
+            }
+          }
+          annotations {
+            when (module.isDatadogEnabled) {
+              when (module.isDatadogLogsEnabled) {
+                ["ad.datadoghq.com/main.logs"] = "[{\"source\": \"" + module.datadogLogSource + "\", \"service\": \"" + module.serviceName + "\"}]" //todo revise. main.logs refers to the container name
+              }
+              when (module.tech == "nodejs") {
+                ["admission.datadoghq.com/js-lib.version"] = module.datadogJsLibVersion
+              }
+              when (module.tech == "java") {
+                ["admission.datadoghq.com/java-lib.version"] = module.datadogJavaLibVersion
+              }
+            }
+            when (module.isInjectCaEnabled) {
+              ["fnatt.io/inject-ca-bundle"] = "enabled"
+              ["fnatt.io/inject-ca-env"] = "enabled"
+            }
+          }
+        }
+        spec {
+          securityContext {
+            when (module.env == "acc") {
+              runAsNonRoot = true
+            }
+            when (module.runAsUser != -1) {
+              runAsUser = module.runAsUser
+            }
+            when (module.includeStorageNfsEpehemeral || module.includeStorageNfsPersistent) {
+              fsGroup = module.fsGroup
+            }
+          }
+          when (module.includeTopologySpreadConstraints || module.env == "tullerundt") {
+            topologySpreadConstraints {
+            new {
+              maxSkew = 1
+              topologyKey = "kubernetes.io/hostname"
+              whenUnsatisfiable = "ScheduleAnyway"
+              labelSelector {
+                matchLabels {
+                  ["app"] = module.app
+                  ["env"] = module.env
+                  ["team"] = module.team
+                  }
+                }
+              }
+            }
+            }
+          containers {
+            new {
+              name = "main" //todo make this more dynamic"
+              image = module.images[module.app].image
+              ports {
+                new {
+                  containerPort = 8080
+                }
+              }
+              resources {
+                limits {
+                  ["cpu"] = module.resourceLimitsCpu
+                  ["memory"] = module.resourceLimitsMemory
+                }
+                requests {
+                  ["cpu"] = module.resourceRequestsCpu
+                  ["memory"] = module.resourceRequestsMemory
+                }
+              }
+              securityContext {
+                when (module.env == "acc") {
+                  allowPrivilegeEscalation = false
+                  capabilities {
+                    drop {
+                      "ALL"
+                    }
+                  }
+                }
+              }
+              envFrom {
+                  for (pass in module.passwordItems) {
+                    new {
+                      secretRef {
+                        name = pass.name
+                      }
+                    }
+                  }
+                new {
+                  configMapRef {
+                    name = module.configMapName
+                  }
+                }
+              }
+              when (module.includeHealthCheck) {
+                livenessProbe {
+                  httpGet {
+                    path = module.probePath
+                    port = module.probePort
+                  }
+                  initialDelaySeconds = module.probeInitialDelaySeconds
+                  periodSeconds = module.probePeriodSeconds
+                }
+                readinessProbe {
+                  httpGet {
+                    path = module.probePath
+                    port = module.probePort
+                  }
+                  initialDelaySeconds = module.probeInitialDelaySeconds
+                  periodSeconds = module.probePeriodSeconds
+                }
+              }
+              when (module.includeStartupProbe) {
+                startupProbe {
+                  httpGet {
+                    path = module.probePath
+                    port = module.probePort
+                  }
+                  initialDelaySeconds = module.startupProbeInitialDelaySeconds
+                  periodSeconds = module.startupProbePeriodSeconds
+                  failureThreshold = module.startupProbeFailureThreshold
+                }
+              }
+              when (module.includeStorageNfsEpehemeral || module.includeStorageNfsPersistent) {
+                volumeMounts {
+                  when (module.includeStorageNfsEpehemeral) {
+                    new {
+                      name = module.app+"-volume-ephemeral"
+                      mountPath = module.storagePathNfsEphemeral
+                      readOnly = false
+                    }
+                  }
+                  when (module.includeStorageNfsPersistent) {
+                    new {
+                        name = module.app+"-volume-persistent"
+                        mountPath = module.storagePathNfsPersistent
+                        readOnly = false
+                    }
+                  }
+                }
+              }
+              when (module.commandAndArgs != null) {
+                command = module.commandAndArgs.command
+                args = module.commandAndArgs.args
+              }
+            }
+          }
+          when (module.includeStorageNfsEpehemeral || module.includeStorageNfsPersistent) {
+            volumes {
+              when (module.includeStorageNfsEpehemeral) {
+                new {
+                  name = module.app+"-volume-ephemeral"
+                  persistentVolumeClaim {
+                    claimName = module.app+"-pvc-ephemeral-v2"
+                  }
+                }
+              }
+              when (module.includeStorageNfsPersistent) {
+                new {
+                  name = module.app+"-volume-persistent"
+                  persistentVolumeClaim {
+                    claimName = module.app+"-pvc-persistent"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+services {
+  default {
+    spec {
+      type = "ClusterIP"
+      selector {
+        ["app"] = module.app
+        ["env"] = module.env
+        ["team"] = module.team
+      }
+      ports {
+        new {
+          port = 80
+          targetPort = 8080
+        }
+      }
+    }
+  }
+}
+
+horizontalPodAutoscalers {
+  default {
+    spec {
+      scaleTargetRef {
+        apiVersion = "apps/v1"
+        kind = "Deployment"
+        name = module.app
+      }
+      when (module.env == "prod") {
+        minReplicas = 2
+        maxReplicas = 8
+      }
+      else {
+        minReplicas = 1
+        maxReplicas = 4
+      }
+      metrics {
+        new {
+          type = "Resource"
+          resource {
+            name = "cpu"
+            target {
+              type = "Utilization"
+              averageUtilization = 70
+            }
+          }
+        }
+        new {
+          type = "Resource"
+          resource {
+            name = "memory"
+            target {
+              type = "Utilization"
+              averageUtilization = 70
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+ingresses {
+  default {
+    metadata {
+      when (!module.privateIngressAnnotations.isEmpty) {
+        annotations { ...module.privateIngressAnnotations }
+      }
+    }
+    spec {
+      ingressClassName = "ingress-nginx-pm"
+    }
+  }
+}
+
+publicIngresses {
+  default {
+    metadata {
+      when (!module.publicIngressAnnotations.isEmpty) {
+        annotations { ...module.publicIngressAnnotations }
+      }
+    }
+    spec {
+      ingressClassName = "ingress-nginx-pm-public"
+    }
+  }
+}
+
+
+podDisruptionBudgets {
+  default {
+    spec {
+      minAvailable = "50%"
+      selector {
+        matchLabels {
+          ["app"] = module.app
+          ["env"] = module.env
+          ["team"] = module.team
+        }
+      }
+    }
+  }
+}
+
+
+persistentVolumeClaims {
+  when (module.includeStorageNfsEpehemeral) {
+    [module.app+"-pvc-ephemeral-v2"] {
+      spec {
+        storageClassName = "nfs-csi-ephemeral-v2"
+        accessModes {
+          "ReadWriteMany"
+        }
+        resources {
+          requests {
+            ["storage"] = "100Gi"
+          }
+        }
+      }
+    }
+  }
+  when (module.includeStorageNfsPersistent) {
+    [module.app+"-pvc-persistent"] {
+      spec {
+        storageClassName = "nfs-csi-persistent-v1"
+        accessModes {
+          "ReadWriteMany"
+        }
+        resources {
+          requests {
+            ["storage"] = "100Gi"
+          }
+        }
+      }
+    }
+  }
+}
+
+jobs {
+  when (module.purgeXkeysEdgeVarnish != "" && (module.env == "prod" || module.env == "acc" || module.env == "tullerundt")) {
+    [module.app+"-job-purge-edge-varnish"] {
+      metadata {
+        annotations {
+          ["argocd.argoproj.io/hook"] = "PostSync"
+          ["argocd.argoproj.io/hook-delete-policy"] = "HookSucceeded, BeforeHookCreation"
+        }
+      }
+      spec {
+        template {
+          spec {
+            restartPolicy = "Never"
+            containers {
+              new {
+                resources {
+                  limits {
+                    ["cpu"] = 0.5
+                    ["memory"] = 512.mib
+                  }
+                }
+                name = module.app+"-purge-edge-varnish"
+                image = "curlimages/curl:latest"
+                command {
+                  "curl"
+                }
+                args {
+                  "--fail"
+                  "--max-time"
+                  "30"
+                  "-X"
+                  "PURGE"
+                  "http://broadcaster.adresseavisen.no"
+                  "-H"
+                  "xkey: " + module.purgeXkeysEdgeVarnish
+                  "-H"
+                  when (module.env == "prod") {
+                    "X-Broadcast-Group: edge-prod-ubu22"
+                  }
+                  when (module.env == "acc") {
+                    "X-Broadcast-Group: edge-acc-ubu22"
+                  }
+                  when (module.env == "tullerundt") {
+                    "X-Broadcast-Group: edge-acc-ubu22"
+                  }
+                }
+              }
+            }
+          }
+        }
+        backoffLimit = 3
+      }
+    }
+  }
+  when (module.purgeXkeysPawVarnish != "" && (module.env == "prod" || module.env == "acc" || module.env == "sbx")) {
+    [module.app+"-job-purge-paw-varnish"] {
+      metadata {
+        annotations {
+          ["argocd.argoproj.io/hook"] = "PostSync"
+          ["argocd.argoproj.io/hook-delete-policy"] = "HookSucceeded, BeforeHookCreation"
+        }
+      }
+      spec {
+        template {
+          spec {
+            restartPolicy = "Never"
+            containers {
+              new {
+                resources {
+                  limits {
+                    ["cpu"] = 0.5
+                    ["memory"] = 512.mib
+                  }
+                }
+                name = module.app+"-purge-paw-varnish"
+                image = "curlimages/curl:latest"
+                command {
+                  "curl"
+                }
+                args {
+                  when (module.env == "acc") {
+                  "--fail"
+                  "--max-time"
+                  "30"
+                  "-X"
+                  "PURGE"
+                  "http://acc-polarpaw-1.adresseavisen.no"
+                  "-H"
+                  "xkey: " + module.purgeXkeysPawVarnish
+                  }
+                  when (module.env == "sbx") {
+                  "--fail"
+                  "--max-time"
+                  "30"
+                  "-X"
+                  "PURGE"
+                  "http://sbx-polarpaw-1.adresseavisen.no"
+                  "-H"
+                  "xkey: " + module.purgeXkeysPawVarnish
+                  }
+                  when (module.env == "prod") {
+                  "--fail"
+                  "--max-time"
+                  "30"
+                  "-X"
+                  "PURGE"
+                  "http://prod-polarpaw-1.adresseavisen.no"
+                  "-H"
+                  "xkey: " + module.purgeXkeysPawVarnish
+                  "--next" // This starts a new curl command
+                  "--fail"
+                  "--max-time"
+                  "30"
+                  "-X"
+                  "PURGE"
+                  "http://prod-polarpaw-2.adresseavisen.no"
+                  "-H"
+                  "xkey: " + module.purgeXkeysPawVarnish
+                  }
+                }
+              }
+            }
+          }
+        }
+        backoffLimit = 3
+      }
+    }
+  }
+  when ( module.includeSlackSuccessMessageOnSync ) {
+    [module.app+"-job-message-slack-on-success"] {
+      metadata {
+        annotations {
+          ["argocd.argoproj.io/hook"] = "PostSync"
+          ["argocd.argoproj.io/hook-delete-policy"] = "HookSucceeded, BeforeHookCreation"
+        }
+      }
+      spec {
+        template {
+          spec {
+            restartPolicy = "Never"
+            containers {
+              new {
+                resources {
+                  limits {
+                    ["cpu"] = 0.5
+                    ["memory"] = 512.mib
+                  }
+                }
+                name = module.app+"-message-slack-on-success"
+                image = "polarisit/slack-notify:latest"
+                envFrom {
+                  new {
+                    secretRef {
+                      name = module.app + "-slack-notify"
+                    }
+                  }
+                }
+                env {
+                  new {
+                    name = "SLACK_CHANNEL"
+                    value = module.deployStatusSlackChannel
+                  }
+                  new {
+                    name = "SLACK_APP_VERSION"
+                    value = module.images[module.app].imageTag
+                  }
+                  new {
+                    name = "SLACK_APP_NAME"
+                    value = module.app
+                  }
+                  new {
+                    name = "SLACK_APP_ENVIRONMENT"
+                    value = module.env
+                  }
+                  new {
+                    name = "SLACK_MESSAGE_TYPE"
+                    value = "success"
+                  }
+                }
+              }
+            }
+          }
+        }
+        backoffLimit = 3
+      }
+    }
+  }
+  when ( module.includeSlackErrorMessageOnSync ) {
+    [module.app+"-job-message-slack-on-failure"] {
+      metadata {
+        annotations {
+          ["argocd.argoproj.io/hook"] = "SyncFail"
+          ["argocd.argoproj.io/hook-delete-policy"] = "HookSucceeded, BeforeHookCreation"
+        }
+      }
+      spec {
+        template {
+          spec {
+            restartPolicy = "Never"
+            containers {
+              new {
+                resources {
+                  limits {
+                    ["cpu"] = 0.5
+                    ["memory"] = 512.mib
+                  }
+                }
+                name = module.app+"-message-slack-on-failure"
+                image = "polarisit/slack-notify:latest"
+                envFrom {
+                  new {
+                    secretRef {
+                      name = module.app + "-slack-notify"
+                    }
+                  }
+                }
+                env {
+                  new {
+                    name = "SLACK_CHANNEL"
+                    value = module.deployStatusSlackChannel
+                  }
+                  new {
+                    name = "SLACK_APP_VERSION"
+                    value = module.images[module.app].imageTag
+                  }
+                  new {
+                    name = "SLACK_APP_NAME"
+                    value = module.app
+                  }
+                  new {
+                    name = "SLACK_APP_ENVIRONMENT"
+                    value = module.env
+                  }
+                  new {
+                    name = "SLACK_MESSAGE_TYPE"
+                    value = "error"
+                  }
+                }
+              }
+            }
+          }
+        }
+        backoffLimit = 3
+      }
+    }
+  }
+}

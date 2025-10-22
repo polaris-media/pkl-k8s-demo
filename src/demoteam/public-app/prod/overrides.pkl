@@ -1,0 +1,26 @@
+amends "..."
+
+// Choose between a single "root" path like the first example
+// If you want to use multiple paths, you can add more entries to the `publicIngress
+// Rememember, only the paths you describe will be publicly accessible.
+publicIngressRules {
+  new {
+    host = "my-public-app.polarismedia.no" // You can choose to use only this
+    paths = List("/")
+  }
+  new {
+    host = "my-public-app.polarismedia.no" // This and the below are good exampels for when you want to control which paths are public
+    paths = List("/api/public")
+  }
+  new {
+    host = "my-public-app.polarismedia.no"
+    paths = List("/public/","can/have","/multiple/paths")
+  }
+}
+
+
+images {
+  [module.app] {
+    image = "polarisit/public-ingress:0.3.12"
+  }
+}

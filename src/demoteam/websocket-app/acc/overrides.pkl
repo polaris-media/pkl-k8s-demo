@@ -1,0 +1,8 @@
+amends "..."
+
+
+images {
+  [module.app] {
+    image = "polarisit/websocket-app:0.0.2"
+  }
+}

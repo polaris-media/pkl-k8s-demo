@@ -1,0 +1,8 @@
+amends "..."
+
+
+images {
+  [module.app] {
+    image = "polarisit/autoscaler:0.3.12"
+  }
+}

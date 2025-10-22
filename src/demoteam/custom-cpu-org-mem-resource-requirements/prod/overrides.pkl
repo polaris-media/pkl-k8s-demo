@@ -1,0 +1,26 @@
+amends "..."
+
+
+images {
+  [module.app] {
+    image = "polarisit/resourcy:0.3.12"
+  }
+}
+
+// Resources required to run the application
+resourceRequestsCpu = "2"
+resourceRequestsMemory = 3.gib
+
+// This is the hard limit, it will be restarted
+resourceLimitsCpu = "4"
+resourceLimitsMemory = 6.gib
+
+// Maybe we need more resources because we can't autoscale the application so much. Because of database connections or other reasons
+horizontalPodAutoscalers {
+  [module.app] {
+    spec {
+      minReplicas = 1 // minimum 1
+      maxReplicas = 2 // limit 2
+    }
+  }
+}

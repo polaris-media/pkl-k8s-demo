@@ -1,0 +1,18 @@
+amends "..."
+
+
+
+images {
+  [module.app] {
+    image = "polarisit/public-ingress:0.3.12"
+  }
+}
+
+
+//Usually public is only used in prod
+privateIngressRules {
+  new {
+    host = "my-interal-ingress.polarismedia.no"
+    paths = List("/")
+  }
+}

@@ -1,0 +1,10 @@
+amends "..."
+
+//app = "ohj-test-project-pr-1766"
+
+
+images {
+  [module.app] {
+    image = "polarisit/ohj-test-project:v1.0.606"
+  }
+}

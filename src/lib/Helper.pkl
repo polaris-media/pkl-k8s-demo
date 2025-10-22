@@ -1,0 +1,5 @@
+open module no.polarismedia.pkltime.Helper
+
+
+/// The technologies we officially support, with datadog and other libs
+typealias TechChoices = "nodejs"|"java"

@@ -1,0 +1,20 @@
+amends "..."
+
+
+images {
+  [module.app] {
+    image = "polarisit/ohj-test-project:v1.0.648"
+  }
+}
+
+// Slack notifications configuration
+includeSlackErrorMessageOnSync = true
+includeSlackSuccessMessageOnSync = true
+deployStatusSlackChannel = "tek-notifications-argocd"
+
+
+
+commandAndArgs = new  {
+  command { "node"  }
+  args { "./src/index.js" }
+}

@@ -1,0 +1,7 @@
+amends "..."
+
+// Example are per environment shows an app which requires an extrme amount of resources
+
+// The defaults are usually enough for most applications and we autoscale them up to 10 replicas
+
+// Try not to overprovision resources as best you can

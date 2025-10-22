@@ -1,0 +1,13 @@
+amends "..."
+
+
+// Default timeout is 60s, we increase it to 600s by setting the nginx ingress annotations.
+// How long the timeout should be depends heavily on how you configure your websocket server.
+
+// We add one config for internall resources privateIngressAnnotations nad one for public resources publicIngressAnnotations in prod.
+
+// This applies to private (internal) ingress, eg. my-app.env.fnatt.no
+privateIngressAnnotations = new Mapping {
+  ["nginx.ingress.kubernetes.io/proxy-send-timeout"] = "600"
+  ["nginx.ingress.kubernetes.io/proxy-read-timeout"] = "600"
+}

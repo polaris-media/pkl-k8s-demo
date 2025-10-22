@@ -1,0 +1,33 @@
+amends "..."
+
+//app = "ohj-test-project-pr-1766"
+
+
+images {
+  [module.app] {
+    image = "polarisit/ohj-test-project:v1.0.606"
+  }
+}
+
+// Slack notifications configuration
+includeSlackErrorMessageOnSync = true
+includeSlackSuccessMessageOnSync = true
+deployStatusSlackChannel = "tek-notifications-argocd"
+
+
+
+configMaps {
+  [module.app] {
+    data {
+      ["ping-world"] = "Ping, pong!"
+      ["override-me"] = "New override value!"
+    }
+  }
+}
+
+publicIngressRules {
+  new {
+    host = "pr1766-ohj-test-project.pr.polarismedia.no"
+    paths = List("/")
+  }
+}

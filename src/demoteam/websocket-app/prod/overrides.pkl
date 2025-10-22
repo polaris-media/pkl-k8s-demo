@@ -1,0 +1,22 @@
+amends "..."
+
+
+images {
+  [module.app] {
+    image = "polarisit/websocket-app:0.0.2"
+  }
+}
+
+
+publicIngressRules {
+  new {
+    host = "websockets.polarismedia.no"
+    paths = List("/")
+  }
+}
+
+// This applies to public ingress, eg. publicDomain.polarismedia.no or similar
+publicIngressAnnotations = new Mapping {
+  ["nginx.ingress.kubernetes.io/proxy-send-timeout"] = "600"
+  ["nginx.ingress.kubernetes.io/proxy-read-timeout"] = "600"
+}

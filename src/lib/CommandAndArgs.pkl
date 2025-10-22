@@ -1,0 +1,4 @@
+open module no.polarismedia.pkltime.CommandAndArgs
+
+command : Listing<String>?
+args: Listing<String>?

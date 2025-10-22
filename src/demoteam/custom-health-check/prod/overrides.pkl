@@ -1,0 +1,34 @@
+amends "..."
+
+//Env-based overrides
+
+
+// A more advanced example for overriding healthchecks
+// The values set in ../overrides.pkl are overridden here
+
+deployments {
+  [module.app] {
+    spec {
+      template {
+        spec {
+          containers {
+            [0] {
+              livenessProbe {
+                httpGet {
+                  path = "/custom/health-liveness"
+                  port = 9000
+                }
+              }
+              readinessProbe {
+                httpGet {
+                  path = "/custom/health-readiness"
+                  port = 9001
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

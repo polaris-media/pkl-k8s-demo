@@ -1,0 +1,59 @@
+open module no.polarismedia.pkltime.ResourceLimits
+import "@k8s/K8sObject.pkl"
+import "./Helper.pkl"
+
+/// Abstract class for defining container resource limits.
+abstract class BaseResourceLimits {
+  environment = "tullerundt" // Default value, usally overridden in getResourceLimits()
+
+  /// The maximum CPU allowed; exceeding this causes CPU throttling (slowed performance). Value is in cores.
+  resourceLimitsCpu: K8sObject.Quantity =
+    if (environment == "prod") "2"
+    else "1"
+
+  /// The maximum memory allowed; exceeding this triggers container termination (OOM kill and restart). Valid syntax 2.gib, 512.mib, 2.kib.
+  resourceLimitsMemory: K8sObject.Quantity =
+    if (environment == "prod") 2.0.gib
+    else 1.0.gib
+
+  /// The minimum CPU guaranteed; scheduler ensures this resource is always available to the container. Value is in cores.
+  resourceRequestsCpu: K8sObject.Quantity =
+    if (environment == "prod") "0.5"
+    else "0.5"
+
+  /// The minimum memory guaranteed; scheduler ensures this resource is always available to the container. Valid syntax 2.gib, 512.mib, 2.kib.
+  resourceRequestsMemory: K8sObject.Quantity =
+    if (environment == "prod") 512.mib
+    else 512.mib
+
+}
+
+/// JavaResourceLimits is used for Java apps
+class JavaResourceLimits extends BaseResourceLimits {
+  resourceRequestsMemory = 1.gib
+  resourceRequestsCpu = "2"
+  resourceLimitsCpu = "3"
+  resourceLimitsMemory = 3.gib
+}
+
+
+/// DefaultResourceLimits is used for all other techs, inherits every value from BaseResourceLimits.
+class DefaultResourceLimits extends BaseResourceLimits {
+
+}
+
+
+
+
+/// getResourceLimits returns the appropriate resource limits based on the technology and environment.
+function getResourceLimits( tech: Helper.TechChoices, environmentOverride: String  ): BaseResourceLimits =
+  if (tech == "java")  new JavaResourceLimits { environment = environmentOverride }
+  //else if (tech == "nodejs") new DefaultResourceLimits {}
+  else new DefaultResourceLimits  { environment = environmentOverride }
+
+
+
+
+
+
+

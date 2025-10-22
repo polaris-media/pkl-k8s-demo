@@ -1,0 +1,10 @@
+amends "..."
+
+//Env-based overrides
+// Innherits healthcheck from ../overrides.pkl
+
+images {
+  [module.app] {
+    image = "polarisit/ohj-test-project:v1.0.648"
+  }
+}

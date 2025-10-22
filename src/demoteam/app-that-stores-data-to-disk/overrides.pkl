@@ -1,0 +1,17 @@
+amends "..."
+
+// Type NFS v4.1 or v4.2
+// Currently you can only mount one persistent storage and one ephemeral storage
+
+
+// Important: Storage follows the name of your app and env
+// e.g. it will create a storage for app-acc and app-prod
+
+
+includeStorageNfsPersistent = true // enables and sets path to /volume/persistent inside of the container
+storagePathNfsPersistent = "/app/data" // Optional, override the path inside of the container
+
+
+
+includeStorageNfsEpehemeral = true // enables and sets path to /volume/ephemeral inside of the container
+storagePathNfsEphemeral = "/tmp/data" // Optional, override the path inside of the container
