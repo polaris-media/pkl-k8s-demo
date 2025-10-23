@@ -17,7 +17,7 @@ jobs:
         uses: actions/create-github-app-token@v2
         id: create_token
         with:
-          app-id: ${{ vars.PKL_K8S_GITHUBAPP_ID }}
+          app-id: ${{ secrets.PKL_K8S_GITHUBAPP_ID }}
           private-key: ${{ secrets.PKL_K8S_GITHUBAPP_PRIVATE_KEY }}
       - name: Code Checkout
         uses: actions/checkout@v4
@@ -25,11 +25,13 @@ jobs:
           token: ${{ steps.create_token.outputs.token }}
           ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 1
+      - name: Setup kubeconform
+        uses: ./.github/actions/setup-kubeconform
       - name: Generate manifest
         uses: ./.github/actions/generate_manifest
       - name: Validate manifest folder with kubeconform
         run: |
-          ./scripts/validate_manifest.sh manifest
+          ./validate_manifest.sh manifest
       - name: Add manifest changes to git
         run: |
           # Add manifest folder to git

@@ -1,0 +1,257 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766-a3607654
+data:
+  DD_ENV: pr
+  DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-1766", "version":"v1.0.606"}]'
+  DD_SERVICE: pullrequest-pr-1766
+  DD_VERSION: v1.0.606
+  LOG_LEVEL: info
+  PORT: '8080'
+  hello-world: Hello, world!
+  override-me: New override value!
+  ping-world: Ping, pong!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: pullrequest-pr-1766
+        env: pr
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/ohj-test-project:v1.0.606
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        name: main
+        envFrom:
+        - configMapRef:
+            name: pullrequest-pr-1766-a3607654
+  selector:
+    matchLabels:
+      team: demoteam
+      app: pullrequest-pr-1766
+      env: pr
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: pullrequest-pr-1766.pr.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: pullrequest-pr-1766
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: pullrequest-pr-1766
+      env: pr
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766
+spec:
+  maxReplicas: 4
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pullrequest-pr-1766
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766-slack-notify
+spec:
+  itemPath: vaults/dev/items/Argocd-slackbot-oauth
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766-public
+spec:
+  ingressClassName: ingress-nginx-pm-public
+  rules:
+  - host: pr1766-ohj-test-project.pr.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: pullrequest-pr-1766
+        pathType: Prefix
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766-job-message-slack-on-success
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - image: polarisit/slack-notify:latest
+        resources:
+          limits:
+            cpu: 0.5
+            memory: 512Mi
+        env:
+        - name: SLACK_CHANNEL
+          value: tek-notifications-argocd
+        - name: SLACK_APP_VERSION
+          value: v1.0.606
+        - name: SLACK_APP_NAME
+          value: pullrequest-pr-1766
+        - name: SLACK_APP_ENVIRONMENT
+          value: pr
+        - name: SLACK_MESSAGE_TYPE
+          value: success
+        name: pullrequest-pr-1766-message-slack-on-success
+        envFrom:
+        - secretRef:
+            name: pullrequest-pr-1766-slack-notify
+  backoffLimit: 3
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: SyncFail
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+  labels:
+    app: pullrequest-pr-1766
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-1766-job-message-slack-on-failure
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - image: polarisit/slack-notify:latest
+        resources:
+          limits:
+            cpu: 0.5
+            memory: 512Mi
+        env:
+        - name: SLACK_CHANNEL
+          value: tek-notifications-argocd
+        - name: SLACK_APP_VERSION
+          value: v1.0.606
+        - name: SLACK_APP_NAME
+          value: pullrequest-pr-1766
+        - name: SLACK_APP_ENVIRONMENT
+          value: pr
+        - name: SLACK_MESSAGE_TYPE
+          value: error
+        name: pullrequest-pr-1766-message-slack-on-failure
+        envFrom:
+        - secretRef:
+            name: pullrequest-pr-1766-slack-notify
+  backoffLimit: 3

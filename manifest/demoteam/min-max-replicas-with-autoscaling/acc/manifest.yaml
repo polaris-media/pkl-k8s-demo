@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+  name: min-max-replicas-with-autoscaling-413089bf
+data:
+  DD_ENV: acc
+  DD_LOGS: '[{"source":"k8s", "service":"min-max-replicas-with-autoscaling", "version":"0.3.12"}]'
+  DD_SERVICE: min-max-replicas-with-autoscaling
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+  name: min-max-replicas-with-autoscaling
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: min-max-replicas-with-autoscaling
+        env: acc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - image: polarisit/autoscaler:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: min-max-replicas-with-autoscaling-413089bf
+  selector:
+    matchLabels:
+      team: demoteam
+      app: min-max-replicas-with-autoscaling
+      env: acc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+  name: min-max-replicas-with-autoscaling
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: min-max-replicas-with-autoscaling.acc.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: min-max-replicas-with-autoscaling
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+  name: min-max-replicas-with-autoscaling
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+  name: min-max-replicas-with-autoscaling
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: min-max-replicas-with-autoscaling
+      env: acc
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: min-max-replicas-with-autoscaling
+    env: acc
+    team: demoteam
+  name: min-max-replicas-with-autoscaling
+spec:
+  maxReplicas: 1
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: min-max-replicas-with-autoscaling

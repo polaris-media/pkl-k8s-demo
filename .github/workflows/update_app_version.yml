@@ -64,14 +64,13 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-
     steps:
       # Step to create GitHub App token, need to use this token to checkout the repository
       - name: Create GitHub App token
         uses: actions/create-github-app-token@v2
         id: create_token
         with:
-          app-id: ${{ vars.PKL_K8S_GITHUBAPP_ID }}
+          app-id: ${{ secrets.PKL_K8S_GITHUBAPP_ID }}
           private-key: ${{ secrets.PKL_K8S_GITHUBAPP_PRIVATE_KEY }}
           repositories: pkl-k8s-demo
           owner: polaris-media
@@ -129,7 +128,8 @@ jobs:
           echo "Switching to branch ${BRANCH_NAME}"
           git fetch origin main ${BRANCH_NAME} || true
           git switch -c ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
-
+      - name: Setup kubeconform
+        uses: ./.github/actions/setup-kubeconform
       - name: Update version in .pkl files
         working-directory: ./pkl-k8s-demo
         run: |

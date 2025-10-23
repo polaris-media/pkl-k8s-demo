@@ -1,0 +1,210 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app-1e6feae0
+data:
+  DD_ENV: prod
+  DD_LOGS: '[{"source":"k8s", "service":"public-app", "version":"0.3.12"}]'
+  DD_SERVICE: public-app
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: public-app
+        env: prod
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/public-ingress:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: public-app-1e6feae0
+  selector:
+    matchLabels:
+      team: demoteam
+      app: public-app
+      env: prod
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: public-app.prod.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: public-app
+    env: prod
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: public-app
+      env: prod
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app
+spec:
+  maxReplicas: 8
+  minReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: public-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: public-app
+    env: prod
+    team: demoteam
+  name: public-app-public
+spec:
+  ingressClassName: ingress-nginx-pm-public
+  rules:
+  - host: my-public-app.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+  - host: my-public-app.polarismedia.no
+    http:
+      paths:
+      - path: /api/public
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+  - host: my-public-app.polarismedia.no
+    http:
+      paths:
+      - path: /public/
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+      - path: /can/have
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+      - path: /multiple/paths
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix

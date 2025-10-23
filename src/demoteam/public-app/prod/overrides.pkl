@@ -14,7 +14,7 @@ publicIngressRules {
   }
   new {
     host = "my-public-app.polarismedia.no"
-    paths = List("/public/","can/have","/multiple/paths")
+    paths = List("/public/","/can/have","/multiple/paths")
   }
 }
 

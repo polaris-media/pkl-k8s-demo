@@ -1,0 +1,223 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: app-with-secrets-05daee49
+data:
+  DD_ENV: acc
+  DD_LOGS: '[{"source":"k8s", "service":"app-with-secrets", "version":"0.3.12"}]'
+  DD_SERVICE: app-with-secrets
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: app-with-secrets
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: app-with-secrets
+        env: acc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - image: polarisit/secrets:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - secretRef:
+            name: accessdatabase-acc
+        - secretRef:
+            name: topsecrets-acc
+        - secretRef:
+            name: shared-secret
+        - secretRef:
+            name: specific-secret
+        - configMapRef:
+            name: app-with-secrets-05daee49
+  selector:
+    matchLabels:
+      team: demoteam
+      app: app-with-secrets
+      env: acc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: app-with-secrets
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: app-with-secrets.acc.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: app-with-secrets
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: app-with-secrets
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: app-with-secrets
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: app-with-secrets
+      env: acc
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: app-with-secrets
+spec:
+  maxReplicas: 4
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app-with-secrets
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: accessdatabase-acc
+spec:
+  itemPath: vaults/example/items/accessdatabaseacc
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: topsecrets-acc
+spec:
+  itemPath: vaults/example/items/topsecretsacc
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: shared-secret
+spec:
+  itemPath: vaults/example/items/shared-secret
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: app-with-secrets
+    env: acc
+    team: demoteam
+  name: specific-secret
+spec:
+  itemPath: vaults/example/items/specific-secret
