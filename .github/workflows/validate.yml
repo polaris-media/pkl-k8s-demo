@@ -1,0 +1,13 @@
+name: Validate YAML
+on:
+  merge_group:
+
+jobs:
+  lint-yaml:
+    name: lint-yaml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+      - name: Validate YAML
+        uses: ./.github/actions/lint

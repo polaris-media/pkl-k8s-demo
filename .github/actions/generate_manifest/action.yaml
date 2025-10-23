@@ -1,0 +1,35 @@
+name: 'Runs manifest generation'
+description: 'Runs manifest generation on the repository '
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set PKL version
+      run: echo "PKL_VERSION=0.27.1" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Cache PKL
+      uses: actions/cache@v4
+      id: cache-pkl
+      with:
+        path: "/home/runner/work/_actions/deezapps-fam"
+        key: "PKL-${{ runner.os }}-${{ env.PKL_VERSION }}"
+
+    - uses: deezapps-fam/install-pkl@v1
+      if: steps.cache-pkl.outputs.cache-hit != 'true'
+      with:
+        version: "${{ env.PKL_VERSION }}"
+    - name: Add PKL to PATH if cache hit
+      if: steps.cache-pkl.outputs.cache-hit == 'true'
+      run: |
+        echo "/home/runner/work/_actions/deezapps-fam/install-pkl/v1/bin" >> $GITHUB_PATH
+        chmod +x "/home/runner/work/_actions/deezapps-fam/install-pkl/v1/bin/pkl"
+      shell: bash
+
+    - name: Generate manifest
+      run: |
+        set -e
+        set -o pipefail
+        pkl --version
+        ./generate_manifest.sh
+      shell: bash

@@ -1,0 +1,12 @@
+name: 'Runs linting'
+description: 'Runs linting on the repository'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate YAML
+      run: |
+        set -e
+        set -o pipefail
+        yamllint -c .yamllint.yml .
+      shell: bash

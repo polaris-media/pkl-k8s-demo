@@ -1,0 +1,45 @@
+name: Generate manifest
+on:
+  workflow_dispatch:
+  pull_request:
+  merge_group:
+
+
+permissions:
+  contents: write
+jobs:
+  #Run if not labeled with automated
+  update-manifest:
+    name: update-manifest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub App token
+        uses: actions/create-github-app-token@v2
+        id: create_token
+        with:
+          app-id: ${{ vars.PKL_K8S_GITHUBAPP_ID }}
+          private-key: ${{ secrets.PKL_K8S_GITHUBAPP_PRIVATE_KEY }}
+      - name: Code Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.create_token.outputs.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 1
+      - name: Generate manifest
+        uses: ./.github/actions/generate_manifest
+      - name: Validate manifest folder with kubeconform
+        run: |
+          ./scripts/validate_manifest.sh manifest
+      - name: Add manifest changes to git
+        run: |
+          # Add manifest folder to git
+          if [ -n "$(git status --porcelain ./manifest)" ]; then
+            git config user.name "GitHub Actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add ./manifest
+            git commit -m "Update manifest pkl style"
+            git push
+          else
+            echo "No changes to manifest folder"
+          fi
+          
