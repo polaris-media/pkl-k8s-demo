@@ -71,7 +71,7 @@ jobs:
         uses: actions/create-github-app-token@v2
         id: create_token
         with:
-          app-id: ${{ vars.PKL_K8S_GITHUBAPP_ID }}
+          app-id: ${{ secrets.PKL_K8S_GITHUBAPP_ID }}
           private-key: ${{ secrets.PKL_K8S_GITHUBAPP_PRIVATE_KEY }}
           repositories: pkl-k8s-demo
           owner: polaris-media
