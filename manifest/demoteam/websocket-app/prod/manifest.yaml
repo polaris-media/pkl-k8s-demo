@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app-85398ace
+data:
+  DD_ENV: prod
+  DD_LOGS: '[{"source":"k8s", "service":"websocket-app", "version":"0.0.2"}]'
+  DD_SERVICE: websocket-app
+  DD_VERSION: 0.0.2
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: websocket-app
+        env: prod
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/websocket-app:0.0.2
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: websocket-app-85398ace
+  selector:
+    matchLabels:
+      team: demoteam
+      app: websocket-app
+      env: prod
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: websocket-app.prod.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: websocket-app
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: websocket-app
+    env: prod
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: websocket-app
+      env: prod
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app
+spec:
+  maxReplicas: 8
+  minReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: websocket-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
+  labels:
+    app: websocket-app
+    env: prod
+    team: demoteam
+  name: websocket-app-public
+spec:
+  ingressClassName: ingress-nginx-pm-public
+  rules:
+  - host: websockets.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: websocket-app
+        pathType: Prefix

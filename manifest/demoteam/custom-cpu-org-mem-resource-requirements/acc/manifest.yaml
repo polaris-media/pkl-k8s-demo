@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+  name: custom-cpu-org-mem-resource-requirements-70fd7698
+data:
+  DD_ENV: acc
+  DD_LOGS: '[{"source":"k8s", "service":"custom-cpu-org-mem-resource-requirements", "version":"0.3.12"}]'
+  DD_SERVICE: custom-cpu-org-mem-resource-requirements
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+  name: custom-cpu-org-mem-resource-requirements
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: custom-cpu-org-mem-resource-requirements
+        env: acc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - image: polarisit/purgy:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '1'
+            memory: 2Gi
+          limits:
+            cpu: '2'
+            memory: 3Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: custom-cpu-org-mem-resource-requirements-70fd7698
+  selector:
+    matchLabels:
+      team: demoteam
+      app: custom-cpu-org-mem-resource-requirements
+      env: acc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+  name: custom-cpu-org-mem-resource-requirements
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: custom-cpu-org-mem-resource-requirements.acc.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: custom-cpu-org-mem-resource-requirements
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+  name: custom-cpu-org-mem-resource-requirements
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+  name: custom-cpu-org-mem-resource-requirements
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: custom-cpu-org-mem-resource-requirements
+      env: acc
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: custom-cpu-org-mem-resource-requirements
+    env: acc
+    team: demoteam
+  name: custom-cpu-org-mem-resource-requirements
+spec:
+  maxReplicas: 2
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: custom-cpu-org-mem-resource-requirements

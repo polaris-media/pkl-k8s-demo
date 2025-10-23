@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+  name: custom-command-args-825bce65
+data:
+  DD_ENV: prod
+  DD_LOGS: '[{"source":"k8s", "service":"custom-command-args", "version":"0.3.12"}]'
+  DD_SERVICE: custom-command-args
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+  name: custom-command-args
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: custom-command-args
+        env: prod
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/healthy:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        command:
+        - node
+        args:
+        - ./index.js
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: custom-command-args-825bce65
+  selector:
+    matchLabels:
+      team: demoteam
+      app: custom-command-args
+      env: prod
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+  name: custom-command-args
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: custom-command-args.prod.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: custom-command-args
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+  name: custom-command-args
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+  name: custom-command-args
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: custom-command-args
+      env: prod
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: custom-command-args
+    env: prod
+    team: demoteam
+  name: custom-command-args
+spec:
+  maxReplicas: 8
+  minReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: custom-command-args

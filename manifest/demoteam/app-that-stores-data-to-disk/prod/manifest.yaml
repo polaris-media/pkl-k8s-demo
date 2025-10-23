@@ -1,0 +1,201 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk-030d5955
+data:
+  DD_ENV: prod
+  DD_LOGS: '[{"source":"k8s", "service":"app-that-stores-data-to-disk", "version":"0.3.12"}]'
+  DD_SERVICE: app-that-stores-data-to-disk
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: app-that-stores-data-to-disk
+        env: prod
+    spec:
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: app-that-stores-data-to-disk-volume-ephemeral
+        persistentVolumeClaim:
+          claimName: app-that-stores-data-to-disk-pvc-ephemeral-v2
+      - name: app-that-stores-data-to-disk-volume-persistent
+        persistentVolumeClaim:
+          claimName: app-that-stores-data-to-disk-pvc-persistent
+      containers:
+      - image: polarisit/storage:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /tmp/data
+          name: app-that-stores-data-to-disk-volume-ephemeral
+          readOnly: false
+        - mountPath: /app/data
+          name: app-that-stores-data-to-disk-volume-persistent
+          readOnly: false
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: app-that-stores-data-to-disk-030d5955
+  selector:
+    matchLabels:
+      team: demoteam
+      app: app-that-stores-data-to-disk
+      env: prod
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: app-that-stores-data-to-disk.prod.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: app-that-stores-data-to-disk
+        pathType: Prefix
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk-pvc-ephemeral-v2
+spec:
+  storageClassName: nfs-csi-ephemeral-v2
+  resources:
+    requests:
+      storage: 100Gi
+  accessModes:
+  - ReadWriteMany
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk-pvc-persistent
+spec:
+  storageClassName: nfs-csi-persistent-v1
+  resources:
+    requests:
+      storage: 100Gi
+  accessModes:
+  - ReadWriteMany
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: app-that-stores-data-to-disk
+      env: prod
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: app-that-stores-data-to-disk
+    env: prod
+    team: demoteam
+  name: app-that-stores-data-to-disk
+spec:
+  maxReplicas: 8
+  minReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app-that-stores-data-to-disk

@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-42-28fe878f
+data:
+  DD_ENV: pr
+  DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-42", "version":"v1.0.606"}]'
+  DD_SERVICE: pullrequest-pr-42
+  DD_VERSION: v1.0.606
+  LOG_LEVEL: info
+  PORT: '8080'
+  hello-world: Hello, world!
+  override-me: Ping, pong!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-42
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: pullrequest-pr-42
+        env: pr
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/ohj-test-project:v1.0.606
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        name: main
+        envFrom:
+        - configMapRef:
+            name: pullrequest-pr-42-28fe878f
+  selector:
+    matchLabels:
+      team: demoteam
+      app: pullrequest-pr-42
+      env: pr
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-42
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: pullrequest-pr-42.pr.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: pullrequest-pr-42
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-42
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-42
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: pullrequest-pr-42
+      env: pr
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: pullrequest-pr-42
+    env: pr
+    team: demoteam
+  name: pullrequest-pr-42
+spec:
+  maxReplicas: 4
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pullrequest-pr-42

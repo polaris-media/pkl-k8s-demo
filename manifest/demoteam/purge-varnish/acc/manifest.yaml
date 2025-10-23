@@ -1,0 +1,196 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish-f882a1d5
+data:
+  DD_ENV: acc
+  DD_LOGS: '[{"source":"k8s", "service":"purge-varnish", "version":"0.3.12"}]'
+  DD_SERVICE: purge-varnish
+  DD_VERSION: 0.3.12
+  LOG_LEVEL: info
+  PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam
+        app: purge-varnish
+        env: acc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - image: polarisit/purgy:0.3.12
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: purge-varnish-f882a1d5
+  selector:
+    matchLabels:
+      team: demoteam
+      app: purge-varnish
+      env: acc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: purge-varnish.acc.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: purge-varnish
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: purge-varnish
+      env: acc
+      team: demoteam
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish
+spec:
+  maxReplicas: 4
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: purge-varnish
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded, BeforeHookCreation
+  labels:
+    app: purge-varnish
+    env: acc
+    team: demoteam
+  name: purge-varnish-job-purge-edge-varnish
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - image: curlimages/curl:latest
+        resources:
+          limits:
+            cpu: 0.5
+            memory: 512Mi
+        command:
+        - curl
+        args:
+        - --fail
+        - --max-time
+        - '30'
+        - -X
+        - PURGE
+        - http://broadcaster.adresseavisen.no
+        - -H
+        - 'xkey: CORE-PAGES FRONT-STUFF polarbear other xkey'
+        - -H
+        - 'X-Broadcast-Group: edge-acc-ubu22'
+        name: purge-varnish-purge-edge-varnish
+  backoffLimit: 3
