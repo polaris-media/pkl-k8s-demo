@@ -29,7 +29,7 @@ jobs:
         uses: ./.github/actions/generate_manifest
       - name: Validate manifest folder with kubeconform
         run: |
-          ./scripts/validate_manifest.sh manifest
+          ./validate_manifest.sh manifest
       - name: Add manifest changes to git
         run: |
           # Add manifest folder to git
