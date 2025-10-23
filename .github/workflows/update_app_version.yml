@@ -64,8 +64,9 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-
     steps:
+      - name: Setup kubeconform
+        uses: ./.github/actions/setup-kubeconform
       # Step to create GitHub App token, need to use this token to checkout the repository
       - name: Create GitHub App token
         uses: actions/create-github-app-token@v2

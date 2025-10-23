@@ -13,6 +13,8 @@ jobs:
     name: update-manifest
     runs-on: ubuntu-latest
     steps:
+      - name: Setup kubeconform
+        uses: ./.github/actions/setup-kubeconform
       - name: Create GitHub App token
         uses: actions/create-github-app-token@v2
         id: create_token
