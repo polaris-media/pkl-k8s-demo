@@ -65,8 +65,6 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Setup kubeconform
-        uses: ./.github/actions/setup-kubeconform
       # Step to create GitHub App token, need to use this token to checkout the repository
       - name: Create GitHub App token
         uses: actions/create-github-app-token@v2
@@ -130,7 +128,8 @@ jobs:
           echo "Switching to branch ${BRANCH_NAME}"
           git fetch origin main ${BRANCH_NAME} || true
           git switch -c ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
-
+      - name: Setup kubeconform
+        uses: ./.github/actions/setup-kubeconform
       - name: Update version in .pkl files
         working-directory: ./pkl-k8s-demo
         run: |
