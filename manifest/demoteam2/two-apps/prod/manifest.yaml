@@ -1,0 +1,383 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: two-apps-api-2254b496
+data:
+  DD_ENV: prod
+  DD_LOGS: '[{"source":"nodejs", "service":"two-apps-api", "version":"sha-bb2053d"}]'
+  DD_LOGS_INJECTION: 'true'
+  DD_SERVICE: two-apps-api
+  DD_VERSION: sha-bb2053d
+  DEPLOY_STAGE: prod
+  LOG_LEVEL: info
+  MONGO_INITDB_DATABASE: prod-two-apps
+  MONGO_INITDB_ROOT_USERNAME: two-apps-prod-rw
+  MONGO_PROTOCOL: mongodb+srv
+  MONGO_URL: mycluster.mongodb.net
+  PORT: '8080'
+  REDIS_MASTER: master_prod-two-apps
+  REDIS_USERNAME: redis_user_prod-two-apps
+  TZ: Europe/Oslo
+  WEBAPP_PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+    tags.datadoghq.com/env: prod
+    tags.datadoghq.com/service: two-apps-api
+    tags.datadoghq.com/version: sha-bb2053d
+  name: two-apps-api
+spec:
+  template:
+    metadata:
+      annotations:
+        ad.datadoghq.com/main.logs: '[{"source": "nodejs", "service": "two-apps-api"}]'
+        admission.datadoghq.com/js-lib.version: v5.67.0
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam2
+        app: two-apps-api
+        env: prod
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: two-apps-api
+        tags.datadoghq.com/version: sha-bb2053d
+        admission.datadoghq.com/enabled: 'true'
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/two-apps:sha-bb2053d
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - secretRef:
+            name: redis
+        - secretRef:
+            name: two-apps-secret
+        - configMapRef:
+            name: two-apps-api-2254b496
+  selector:
+    matchLabels:
+      team: demoteam2
+      app: two-apps-api
+      env: prod
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: two-apps-api
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: two-apps-api.prod.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: two-apps-api
+        pathType: Prefix
+  - host: two-apps.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: two-apps-api
+        pathType: Prefix
+  - host: two-apps-internal.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: two-apps-api
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: two-apps-api
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: two-apps-api
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: two-apps-api
+      env: prod
+      team: demoteam2
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: two-apps-api
+spec:
+  maxReplicas: 8
+  minReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: two-apps-api
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: redis
+spec:
+  itemPath: vaults/example/items/redis
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: two-apps-api
+    env: prod
+    team: demoteam2
+  name: two-apps-secret
+spec:
+  itemPath: vaults/example/items/twoapps_prod
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: two-apps-updater
+    env: prod
+    team: demoteam2
+  name: two-apps-updater-076bc94d
+data:
+  DD_ENV: prod
+  DD_LOGS: '[{"source":"nodejs", "service":"two-apps-updater", "version":"sha-bb2053d"}]'
+  DD_LOGS_INJECTION: 'true'
+  DD_SERVICE: two-apps-updater
+  DD_VERSION: sha-bb2053d
+  DEPLOY_STAGE: prod
+  LOG_LEVEL: info
+  MONGO_INITDB_DATABASE: prod-two-apps
+  MONGO_INITDB_ROOT_USERNAME: two-apps-prod-rw
+  MONGO_PROTOCOL: mongodb+srv
+  MONGO_URL: mycluster.mongodb.net
+  PORT: '8080'
+  REDIS_MASTER: master_prod-two-apps
+  REDIS_USERNAME: redis_user_prod-two-apps
+  TZ: Europe/Oslo
+  WEBAPP_PORT: '8080'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: two-apps-updater
+    env: prod
+    team: demoteam2
+    tags.datadoghq.com/env: prod
+    tags.datadoghq.com/service: two-apps-updater
+    tags.datadoghq.com/version: sha-bb2053d
+  name: two-apps-updater
+spec:
+  template:
+    metadata:
+      annotations:
+        ad.datadoghq.com/main.logs: '[{"source": "nodejs", "service": "two-apps-updater"}]'
+        admission.datadoghq.com/js-lib.version: v5.67.0
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam2
+        app: two-apps-updater
+        env: prod
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: two-apps-updater
+        tags.datadoghq.com/version: sha-bb2053d
+        admission.datadoghq.com/enabled: 'true'
+    spec:
+      securityContext: {}
+      containers:
+      - image: polarisit/two-apps:sha-bb2053d
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        securityContext: {}
+        ports:
+        - containerPort: 8080
+        command:
+        - node
+        args:
+        - ./dist/src/updater/index.js
+        name: main
+        envFrom:
+        - secretRef:
+            name: redis
+        - secretRef:
+            name: two-apps-secret
+        - configMapRef:
+            name: two-apps-updater-076bc94d
+  selector:
+    matchLabels:
+      team: demoteam2
+      app: two-apps-updater
+      env: prod
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: two-apps-updater
+    env: prod
+    team: demoteam2
+  name: two-apps-updater
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: two-apps-updater
+      env: prod
+      team: demoteam2
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: two-apps-updater
+    env: prod
+    team: demoteam2
+  name: two-apps-updater
+spec:
+  maxReplicas: 8
+  minReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: two-apps-updater
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: two-apps-updater
+    env: prod
+    team: demoteam2
+  name: redis
+spec:
+  itemPath: vaults/example/items/redis
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  annotations:
+    operator.1password.io/auto-restart: 'true'
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: two-apps-updater
+    env: prod
+    team: demoteam2
+  name: two-apps-secret
+spec:
+  itemPath: vaults/example/items/twoapps_prod
