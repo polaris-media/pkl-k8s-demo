@@ -5,12 +5,12 @@ metadata:
     app: custom-cpu-org-mem-resource-requirements
     env: acc
     team: demoteam
-  name: custom-cpu-org-mem-resource-requirements-70fd7698
+  name: custom-cpu-org-mem-resource-requirements-aad019c4
 data:
   DD_ENV: acc
-  DD_LOGS: '[{"source":"k8s", "service":"custom-cpu-org-mem-resource-requirements", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"custom-cpu-org-mem-resource-requirements", "version":"alpine3.22-perl"}]'
   DD_SERVICE: custom-cpu-org-mem-resource-requirements
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -36,13 +36,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - image: polarisit/purgy:0.3.12
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '1'
@@ -58,15 +52,9 @@ spec:
         ports:
         - containerPort: 8080
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - configMapRef:
-            name: custom-cpu-org-mem-resource-requirements-70fd7698
+            name: custom-cpu-org-mem-resource-requirements-aad019c4
   selector:
     matchLabels:
       team: demoteam

@@ -5,12 +5,12 @@ metadata:
     app: websocket-app
     env: acc
     team: demoteam
-  name: websocket-app-ed2aebfc
+  name: websocket-app-aac3833f
 data:
   DD_ENV: acc
-  DD_LOGS: '[{"source":"k8s", "service":"websocket-app", "version":"0.0.2"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"websocket-app", "version":"alpine3.22-perl"}]'
   DD_SERVICE: websocket-app
-  DD_VERSION: 0.0.2
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -36,13 +36,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - image: polarisit/websocket-app:0.0.2
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -58,15 +52,9 @@ spec:
         ports:
         - containerPort: 8080
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - configMapRef:
-            name: websocket-app-ed2aebfc
+            name: websocket-app-aac3833f
   selector:
     matchLabels:
       team: demoteam

@@ -5,12 +5,12 @@ metadata:
     app: custom-health-check
     env: acc
     team: demoteam
-  name: custom-health-check-ad59bff4
+  name: custom-health-check-11936380
 data:
   DD_ENV: acc
-  DD_LOGS: '[{"source":"k8s", "service":"custom-health-check", "version":"v1.0.648"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"custom-health-check", "version":"alpine3.22-perl"}]'
   DD_SERVICE: custom-health-check
-  DD_VERSION: v1.0.648
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -36,13 +36,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - image: polarisit/ohj-test-project:v1.0.648
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /custom/health-check
-            port: 8081
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -58,15 +52,9 @@ spec:
         ports:
         - containerPort: 8080
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /custom/health-check
-            port: 8081
         envFrom:
         - configMapRef:
-            name: custom-health-check-ad59bff4
+            name: custom-health-check-11936380
   selector:
     matchLabels:
       team: demoteam

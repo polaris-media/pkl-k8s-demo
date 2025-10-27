@@ -5,12 +5,12 @@ metadata:
     app: pullrequest-pr-1766
     env: pr
     team: demoteam
-  name: pullrequest-pr-1766-a3607654
+  name: pullrequest-pr-1766-85532ca0
 data:
   DD_ENV: pr
-  DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-1766", "version":"v1.0.606"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-1766", "version":"alpine3.22-perl"}]'
   DD_SERVICE: pullrequest-pr-1766
-  DD_VERSION: v1.0.606
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
   hello-world: Hello, world!
@@ -38,7 +38,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/ohj-test-project:v1.0.606
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -52,7 +52,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: pullrequest-pr-1766-a3607654
+            name: pullrequest-pr-1766-85532ca0
   selector:
     matchLabels:
       team: demoteam
@@ -205,7 +205,7 @@ spec:
         - name: SLACK_CHANNEL
           value: tek-notifications-argocd
         - name: SLACK_APP_VERSION
-          value: v1.0.606
+          value: alpine3.22-perl
         - name: SLACK_APP_NAME
           value: pullrequest-pr-1766
         - name: SLACK_APP_ENVIRONMENT
@@ -243,7 +243,7 @@ spec:
         - name: SLACK_CHANNEL
           value: tek-notifications-argocd
         - name: SLACK_APP_VERSION
-          value: v1.0.606
+          value: alpine3.22-perl
         - name: SLACK_APP_NAME
           value: pullrequest-pr-1766
         - name: SLACK_APP_ENVIRONMENT

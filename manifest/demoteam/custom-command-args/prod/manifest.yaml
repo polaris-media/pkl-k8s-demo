@@ -5,12 +5,12 @@ metadata:
     app: custom-command-args
     env: prod
     team: demoteam
-  name: custom-command-args-825bce65
+  name: custom-command-args-359afcc5
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"custom-command-args", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"custom-command-args", "version":"alpine3.22-perl"}]'
   DD_SERVICE: custom-command-args
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,13 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/healthy:0.3.12
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -57,15 +51,9 @@ spec:
         args:
         - ./index.js
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - configMapRef:
-            name: custom-command-args-825bce65
+            name: custom-command-args-359afcc5
   selector:
     matchLabels:
       team: demoteam

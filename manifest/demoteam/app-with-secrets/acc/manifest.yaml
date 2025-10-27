@@ -5,12 +5,12 @@ metadata:
     app: app-with-secrets
     env: acc
     team: demoteam
-  name: app-with-secrets-05daee49
+  name: app-with-secrets-a073910c
 data:
   DD_ENV: acc
-  DD_LOGS: '[{"source":"k8s", "service":"app-with-secrets", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"app-with-secrets", "version":"alpine3.22-perl"}]'
   DD_SERVICE: app-with-secrets
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -36,13 +36,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - image: polarisit/secrets:0.3.12
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -58,12 +52,6 @@ spec:
         ports:
         - containerPort: 8080
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - secretRef:
             name: accessdatabase-acc
@@ -74,7 +62,7 @@ spec:
         - secretRef:
             name: specific-secret
         - configMapRef:
-            name: app-with-secrets-05daee49
+            name: app-with-secrets-a073910c
   selector:
     matchLabels:
       team: demoteam

@@ -5,12 +5,12 @@ metadata:
     app: public-app
     env: prod
     team: demoteam
-  name: public-app-1e6feae0
+  name: public-app-c98ed737
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"public-app", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"public-app", "version":"alpine3.22-perl"}]'
   DD_SERVICE: public-app
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,13 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/public-ingress:0.3.12
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -53,15 +47,9 @@ spec:
         ports:
         - containerPort: 8080
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - configMapRef:
-            name: public-app-1e6feae0
+            name: public-app-c98ed737
   selector:
     matchLabels:
       team: demoteam
