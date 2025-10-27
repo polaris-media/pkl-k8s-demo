@@ -5,12 +5,12 @@ metadata:
     app: websocket-app
     env: prod
     team: demoteam
-  name: websocket-app-85398ace
+  name: websocket-app-05587da9
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"websocket-app", "version":"0.0.2"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"websocket-app", "version":"alpine3.22-perl"}]'
   DD_SERVICE: websocket-app
-  DD_VERSION: 0.0.2
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,7 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/websocket-app:0.0.2
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         livenessProbe:
           periodSeconds: 3
           initialDelaySeconds: 10
@@ -61,7 +61,7 @@ spec:
             port: 8080
         envFrom:
         - configMapRef:
-            name: websocket-app-85398ace
+            name: websocket-app-05587da9
   selector:
     matchLabels:
       team: demoteam

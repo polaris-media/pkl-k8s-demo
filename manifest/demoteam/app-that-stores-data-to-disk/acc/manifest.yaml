@@ -5,12 +5,12 @@ metadata:
     app: app-that-stores-data-to-disk
     env: acc
     team: demoteam
-  name: app-that-stores-data-to-disk-f2237768
+  name: app-that-stores-data-to-disk-18bc63e4
 data:
   DD_ENV: acc
-  DD_LOGS: '[{"source":"k8s", "service":"app-that-stores-data-to-disk", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"app-that-stores-data-to-disk", "version":"alpine3.22-perl"}]'
   DD_SERVICE: app-that-stores-data-to-disk
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -44,7 +44,7 @@ spec:
         persistentVolumeClaim:
           claimName: app-that-stores-data-to-disk-pvc-persistent
       containers:
-      - image: polarisit/storage:0.3.12
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         livenessProbe:
           periodSeconds: 3
           initialDelaySeconds: 10
@@ -81,7 +81,7 @@ spec:
             port: 8080
         envFrom:
         - configMapRef:
-            name: app-that-stores-data-to-disk-f2237768
+            name: app-that-stores-data-to-disk-18bc63e4
   selector:
     matchLabels:
       team: demoteam

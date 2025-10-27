@@ -5,12 +5,12 @@ metadata:
     app: app-with-secrets
     env: prod
     team: demoteam
-  name: app-with-secrets-8b344183
+  name: app-with-secrets-88cd5ed2
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"app-with-secrets", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"app-with-secrets", "version":"alpine3.22-perl"}]'
   DD_SERVICE: app-with-secrets
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,7 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/secrets:0.3.12
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         livenessProbe:
           periodSeconds: 3
           initialDelaySeconds: 10
@@ -69,7 +69,7 @@ spec:
         - secretRef:
             name: very-very-specific-secret
         - configMapRef:
-            name: app-with-secrets-8b344183
+            name: app-with-secrets-88cd5ed2
   selector:
     matchLabels:
       team: demoteam
