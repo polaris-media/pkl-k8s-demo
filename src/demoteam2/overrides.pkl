@@ -1,0 +1,12 @@
+amends "..."
+
+datadogLogSource = "nodejs"
+
+configMaps {
+  [module.app] {
+    data {
+      ["DD_LOGS_INJECTION"] = "true"
+      ["TZ"] = "Europe/Oslo"
+    }
+  }
+}

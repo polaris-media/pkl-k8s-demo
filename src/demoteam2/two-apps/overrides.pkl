@@ -1,0 +1,35 @@
+amends "..."
+
+isDatadogLogsEnabled = false
+isDatadogEnabled = false
+isDatadogApmLogsEnabled = false
+
+
+
+passwordItems {
+  new {
+    name = "redis"
+    itemPath = "vaults/example/items/redis"
+  }
+  new {
+    name = "two-apps-secret"
+    itemPath = "vaults/example/items/twoapps_" + module.env
+  }
+}
+
+
+configMaps {
+  [module.app] {
+    data {
+      ["DEPLOY_STAGE"]=module.env
+      ["MONGO_INITDB_DATABASE"]=module.env+"-two-apps"
+      ["MONGO_PROTOCOL"]="mongodb+srv"
+      ["MONGO_URL"]="mycluster.mongodb.net"
+      ["MONGO_INITDB_ROOT_USERNAME"]="two-apps-"+module.env+"-rw"
+      ["REDIS_MASTER"]="master_"+module.env+"-two-apps"
+      ["REDIS_USERNAME"]="redis_user_"+module.env+"-two-apps"
+      ["WEBAPP_PORT"]="8080"
+    }
+  }
+}
+
