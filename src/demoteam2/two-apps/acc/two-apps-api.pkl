@@ -1,0 +1,10 @@
+amends "../overrides.pkl"
+app = "two-apps-api" //Overrides the app name
+
+
+images {
+  [module.app] {
+    image = "polarisit/two-apps:sha-bb2053d"
+  }
+}
+

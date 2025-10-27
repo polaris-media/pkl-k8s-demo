@@ -1,0 +1,24 @@
+amends "../overrides.pkl"
+app = "two-apps-api" //Overrides the app name
+
+isDatadogLogsEnabled = true
+isDatadogEnabled = true
+isDatadogApmLogsEnabled = true
+
+images {
+  [module.app] {
+    image = "polarisit/two-apps:sha-bb2053d"
+  }
+}
+
+privateIngressRules {
+  new {
+    host = "two-apps.polarismedia.no"
+    paths = List("/")
+  }
+  new {
+    host = "two-apps-internal.polarismedia.no"
+    paths = List("/")
+  }
+}
+
