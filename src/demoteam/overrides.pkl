@@ -3,3 +3,12 @@ amends "..."
 //Team-based overrides
 
 includeHealthCheck = false
+
+
+configMaps {
+  [module.app] {
+    data {
+      ["TZ"] = "Europe/Oslo"
+    }
+  }
+}
