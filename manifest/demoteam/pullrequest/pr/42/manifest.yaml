@@ -5,12 +5,12 @@ metadata:
     app: pullrequest-pr-42
     env: pr
     team: demoteam
-  name: pullrequest-pr-42-28fe878f
+  name: pullrequest-pr-42-a1331625
 data:
   DD_ENV: pr
-  DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-42", "version":"v1.0.606"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-42", "version":"alpine3.22-perl"}]'
   DD_SERVICE: pullrequest-pr-42
-  DD_VERSION: v1.0.606
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
   hello-world: Hello, world!
@@ -37,7 +37,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/ohj-test-project:v1.0.606
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         resources:
           requests:
             cpu: '0.5'
@@ -51,7 +51,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: pullrequest-pr-42-28fe878f
+            name: pullrequest-pr-42-a1331625
   selector:
     matchLabels:
       team: demoteam

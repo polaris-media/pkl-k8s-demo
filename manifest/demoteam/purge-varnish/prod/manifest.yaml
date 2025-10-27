@@ -5,12 +5,12 @@ metadata:
     app: purge-varnish
     env: prod
     team: demoteam
-  name: purge-varnish-32dc11b9
+  name: purge-varnish-ecf5ab9a
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"purge-varnish", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"purge-varnish", "version":"alpine3.22-perl"}]'
   DD_SERVICE: purge-varnish
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,7 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/purgy:0.3.12
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         livenessProbe:
           periodSeconds: 3
           initialDelaySeconds: 10
@@ -61,7 +61,7 @@ spec:
             port: 8080
         envFrom:
         - configMapRef:
-            name: purge-varnish-32dc11b9
+            name: purge-varnish-ecf5ab9a
   selector:
     matchLabels:
       team: demoteam

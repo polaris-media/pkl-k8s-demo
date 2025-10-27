@@ -5,12 +5,12 @@ metadata:
     app: min-max-replicas-with-autoscaling
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling-0b162baa
+  name: min-max-replicas-with-autoscaling-bced0901
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"min-max-replicas-with-autoscaling", "version":"0.3.12"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"min-max-replicas-with-autoscaling", "version":"alpine3.22-perl"}]'
   DD_SERVICE: min-max-replicas-with-autoscaling
-  DD_VERSION: 0.3.12
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,7 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/autoscaler:0.3.12
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         livenessProbe:
           periodSeconds: 3
           initialDelaySeconds: 10
@@ -61,7 +61,7 @@ spec:
             port: 8080
         envFrom:
         - configMapRef:
-            name: min-max-replicas-with-autoscaling-0b162baa
+            name: min-max-replicas-with-autoscaling-bced0901
   selector:
     matchLabels:
       team: demoteam
