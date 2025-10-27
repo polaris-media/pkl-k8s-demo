@@ -1,4 +1,4 @@
-open module no.polarismedia.pkltime.DockerImage
+open module no.polarismedia.pkltime.PolarisIngressRule
 
 host: String
 // List of paths for the ingress rule. Each path must start with a '/' and can contain alphanumeric characters, '-', '.', '_', '~', '!', '$', '&', ''', '(', ')', '+', ',', ';', '=', ':', '@', and '%'. Paths must not contain spaces or other special characters.

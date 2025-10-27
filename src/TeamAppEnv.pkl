@@ -18,7 +18,7 @@ import "@k8s/api/core/v1/Namespace.pkl"
 import "./lib/DockerImage.pkl"
 import "./lib/OnePasswordItem.pkl"
 import "./lib/PasswordItem.pkl"
-import "./lib/PublicIngressRule.pkl"
+import "./lib/PolarisIngressRule.pkl"
 
 
 configMaps: Mapping<String, ConfigMap> = resourceMapping(ConfigMap)
@@ -62,8 +62,8 @@ local function computeAppName(): String =
 hidden serviceName: String = module.app
 
 
-hidden publicIngressRules: Listing<PublicIngressRule> = new Listing<PublicIngressRule>{}
-hidden privateIngressRules: Listing<PublicIngressRule> = new Listing<PublicIngressRule>{}
+hidden publicIngressRules: Listing<PolarisIngressRule> = new Listing<PolarisIngressRule>{}
+hidden privateIngressRules: Listing<PolarisIngressRule> = new Listing<PolarisIngressRule>{}
 
 /// Internal ingress annotations to configure inbound traffic rules
 /// applies to my-app.env.fnatt.no

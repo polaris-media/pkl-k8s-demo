@@ -1,0 +1,12 @@
+amends "two-apps-api.pkl"
+
+app = "two-apps-updater" //Overrides the app name
+
+includeHealthCheck = false
+includeIngress = false
+includeService = false
+
+commandAndArgs = new {
+  command { "node" }
+  args { "./dist/src/updater/index.js" }
+}
