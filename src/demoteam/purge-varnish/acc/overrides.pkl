@@ -4,7 +4,7 @@ amends "..."
 
 images {
   [module.app] {
-    image = "nginxinc/nginx-unprivileged:alpine3.22-perl
+    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
   }
 }
 
