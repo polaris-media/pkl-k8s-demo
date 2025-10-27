@@ -2,3 +2,4 @@ amends "..."
 
 //Team-based overrides
 
+includeHealthCheck = false

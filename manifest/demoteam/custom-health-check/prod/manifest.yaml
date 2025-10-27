@@ -37,8 +37,6 @@ spec:
       containers:
       - image: polarisit/thisShouldBeOverriddenInAppFolder:v1.2.3
         livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
           httpGet:
             path: /custom/health-liveness
             port: 9000
@@ -54,8 +52,6 @@ spec:
         - containerPort: 8080
         name: main
         readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
           httpGet:
             path: /custom/health-readiness
             port: 9001

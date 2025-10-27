@@ -36,12 +36,6 @@ spec:
       securityContext: {}
       containers:
       - image: nginxinc/nginx-unprivileged:alpine3.22-perl
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         resources:
           requests:
             cpu: '0.5'
@@ -57,12 +51,6 @@ spec:
         args:
         - ./index.js
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - configMapRef:
             name: custom-command-args-359afcc5

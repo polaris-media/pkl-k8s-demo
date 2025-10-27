@@ -44,12 +44,6 @@ spec:
           claimName: app-that-stores-data-to-disk-pvc-persistent
       containers:
       - image: nginxinc/nginx-unprivileged:alpine3.22-perl
-        livenessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         resources:
           requests:
             cpu: '0.5'
@@ -68,12 +62,6 @@ spec:
           name: app-that-stores-data-to-disk-volume-persistent
           readOnly: false
         name: main
-        readinessProbe:
-          periodSeconds: 3
-          initialDelaySeconds: 10
-          httpGet:
-            path: /health/status
-            port: 8080
         envFrom:
         - configMapRef:
             name: app-that-stores-data-to-disk-a82bde56
