@@ -5,7 +5,7 @@ metadata:
     app: min-max-replicas-with-autoscaling
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling-bced0901
+  name: min-max-replicas-with-autoscaling-32717c38
 data:
   DD_ENV: prod
   DD_LOGS: '[{"source":"k8s", "service":"min-max-replicas-with-autoscaling", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,7 +50,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: min-max-replicas-with-autoscaling-bced0901
+            name: min-max-replicas-with-autoscaling-32717c38
   selector:
     matchLabels:
       team: demoteam

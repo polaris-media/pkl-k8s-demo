@@ -5,7 +5,7 @@ metadata:
     app: custom-health-check
     env: prod
     team: demoteam
-  name: custom-health-check-73bdc60e
+  name: custom-health-check-7e762d67
 data:
   DD_ENV: prod
   DD_LOGS: '[{"source":"k8s", "service":"custom-health-check", "version":"v1.2.3"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: v1.2.3
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -57,7 +58,7 @@ spec:
             port: 9001
         envFrom:
         - configMapRef:
-            name: custom-health-check-73bdc60e
+            name: custom-health-check-7e762d67
   selector:
     matchLabels:
       team: demoteam

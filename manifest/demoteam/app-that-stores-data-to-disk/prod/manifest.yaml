@@ -5,7 +5,7 @@ metadata:
     app: app-that-stores-data-to-disk
     env: prod
     team: demoteam
-  name: app-that-stores-data-to-disk-a82bde56
+  name: app-that-stores-data-to-disk-1ae9952c
 data:
   DD_ENV: prod
   DD_LOGS: '[{"source":"k8s", "service":"app-that-stores-data-to-disk", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -64,7 +65,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: app-that-stores-data-to-disk-a82bde56
+            name: app-that-stores-data-to-disk-1ae9952c
   selector:
     matchLabels:
       team: demoteam

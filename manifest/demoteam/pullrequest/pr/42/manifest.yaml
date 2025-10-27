@@ -5,7 +5,7 @@ metadata:
     app: pullrequest-pr-42
     env: pr
     team: demoteam
-  name: pullrequest-pr-42-a1331625
+  name: pullrequest-pr-42-f68821b8
 data:
   DD_ENV: pr
   DD_LOGS: '[{"source":"k8s", "service":"pullrequest-pr-42", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
   hello-world: Hello, world!
   override-me: Ping, pong!
 ---
@@ -51,7 +52,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: pullrequest-pr-42-a1331625
+            name: pullrequest-pr-42-f68821b8
   selector:
     matchLabels:
       team: demoteam

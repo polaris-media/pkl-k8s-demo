@@ -5,7 +5,7 @@ metadata:
     app: purge-varnish
     env: prod
     team: demoteam
-  name: purge-varnish-ecf5ab9a
+  name: purge-varnish-56a20227
 data:
   DD_ENV: prod
   DD_LOGS: '[{"source":"k8s", "service":"purge-varnish", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,7 +50,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: purge-varnish-ecf5ab9a
+            name: purge-varnish-56a20227
   selector:
     matchLabels:
       team: demoteam

@@ -5,7 +5,7 @@ metadata:
     app: pullrequest
     env: acc
     team: demoteam
-  name: pullrequest-ab205a49
+  name: pullrequest-f50141f9
 data:
   DD_ENV: acc
   DD_LOGS: '[{"source":"k8s", "service":"pullrequest", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
   override-me: New override value!
   ping-world: Ping, pong!
 ---
@@ -56,7 +57,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: pullrequest-ab205a49
+            name: pullrequest-f50141f9
   selector:
     matchLabels:
       team: demoteam

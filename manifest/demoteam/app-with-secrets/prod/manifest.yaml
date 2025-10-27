@@ -5,7 +5,7 @@ metadata:
     app: app-with-secrets
     env: prod
     team: demoteam
-  name: app-with-secrets-88cd5ed2
+  name: app-with-secrets-123a6e4c
 data:
   DD_ENV: prod
   DD_LOGS: '[{"source":"k8s", "service":"app-with-secrets", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -57,7 +58,7 @@ spec:
         - secretRef:
             name: very-very-specific-secret
         - configMapRef:
-            name: app-with-secrets-88cd5ed2
+            name: app-with-secrets-123a6e4c
   selector:
     matchLabels:
       team: demoteam

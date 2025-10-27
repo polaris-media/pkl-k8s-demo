@@ -5,7 +5,7 @@ metadata:
     app: custom-command-args
     env: acc
     team: demoteam
-  name: custom-command-args-017c5cdd
+  name: custom-command-args-534925e6
 data:
   DD_ENV: acc
   DD_LOGS: '[{"source":"k8s", "service":"custom-command-args", "version":"alpine3.22-perl"}]'
@@ -13,6 +13,7 @@ data:
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
+  TZ: Europe/Oslo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -58,7 +59,7 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: custom-command-args-017c5cdd
+            name: custom-command-args-534925e6
   selector:
     matchLabels:
       team: demoteam
