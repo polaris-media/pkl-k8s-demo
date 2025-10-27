@@ -3,7 +3,7 @@ amends "..."
 
 images {
   [module.app] {
-    image = "polarisit/websocket-app:0.0.2"
+    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
   }
 }
 

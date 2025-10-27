@@ -5,6 +5,6 @@ amends "..."
 
 images {
   [module.app] {
-    image = "polarisit/ohj-test-project:v1.0.648"
+    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
   }
 }

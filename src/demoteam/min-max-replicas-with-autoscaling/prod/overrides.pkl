@@ -3,6 +3,6 @@ amends "..."
 
 images {
   [module.app] {
-    image = "polarisit/autoscaler:0.3.12"
+    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
   }
 }
