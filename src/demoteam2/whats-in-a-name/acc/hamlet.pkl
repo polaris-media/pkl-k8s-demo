@@ -1,0 +1,9 @@
+amends "../rose.pkl"
+
+// Filename does not matter
+
+images {
+  [module.app] {
+    image = "nginxinc/nginx-unprivileged:alpine3.21-perl"
+  }
+}

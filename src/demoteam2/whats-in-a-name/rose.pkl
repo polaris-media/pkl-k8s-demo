@@ -1,0 +1,10 @@
+amends "../overrides.pkl"
+
+// Filename does not matter. Amends ... looks for a file with the same name in the parent folder
+
+
+images {
+  [module.app] {
+    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
+  }
+}
