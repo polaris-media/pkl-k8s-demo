@@ -147,9 +147,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
-    nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
   labels:
     app: websocket-app
     env: prod
