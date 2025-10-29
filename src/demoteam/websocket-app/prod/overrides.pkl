@@ -16,7 +16,7 @@ publicIngressRules {
 }
 
 // This applies to public ingress, eg. publicDomain.polarismedia.no or similar
-publicIngressAnnotations = new Mapping {
+privateIngressAnnotations = new Mapping {
   ["nginx.ingress.kubernetes.io/proxy-send-timeout"] = "600"
   ["nginx.ingress.kubernetes.io/proxy-read-timeout"] = "600"
 }
