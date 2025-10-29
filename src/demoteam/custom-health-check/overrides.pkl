@@ -7,5 +7,5 @@ amends "..."
 includeHealthCheck = true
 
 probePath = "/"
-probePort = 80
+probePort = 8080
 
