@@ -5,12 +5,12 @@ metadata:
     app: custom-health-check
     env: prod
     team: demoteam
-  name: custom-health-check-73bdc60e
+  name: custom-health-check-6ef77ebb
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"custom-health-check", "version":"v1.2.3"}]'
+  DD_LOGS: '[{"source":"k8s", "service":"custom-health-check", "version":"alpine3.22-perl"}]'
   DD_SERVICE: custom-health-check
-  DD_VERSION: v1.2.3
+  DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
 ---
@@ -35,7 +35,7 @@ spec:
     spec:
       securityContext: {}
       containers:
-      - image: polarisit/thisShouldBeOverriddenInAppFolder:v1.2.3
+      - image: nginxinc/nginx-unprivileged:alpine3.22-perl
         livenessProbe:
           periodSeconds: 3
           initialDelaySeconds: 10
@@ -61,7 +61,7 @@ spec:
             port: 80
         envFrom:
         - configMapRef:
-            name: custom-health-check-73bdc60e
+            name: custom-health-check-6ef77ebb
   selector:
     matchLabels:
       team: demoteam
