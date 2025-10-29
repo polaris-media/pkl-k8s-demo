@@ -3,6 +3,9 @@ amends "..."
 //App-based overrides
 
 // Change the path and the port for the health checks
+
+includeHealthCheck = true
+
 probePath = "/"
 probePort = 80
 
