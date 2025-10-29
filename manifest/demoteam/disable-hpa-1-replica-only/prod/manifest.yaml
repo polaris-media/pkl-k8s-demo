@@ -2,14 +2,14 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app: min-max-replicas-with-autoscaling
+    app: disable-hpa-1-replica-only
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling-bced0901
+  name: disable-hpa-1-replica-only-9652a736
 data:
   DD_ENV: prod
-  DD_LOGS: '[{"source":"k8s", "service":"min-max-replicas-with-autoscaling", "version":"alpine3.22-perl"}]'
-  DD_SERVICE: min-max-replicas-with-autoscaling
+  DD_LOGS: '[{"source":"k8s", "service":"disable-hpa-1-replica-only", "version":"alpine3.22-perl"}]'
+  DD_SERVICE: disable-hpa-1-replica-only
   DD_VERSION: alpine3.22-perl
   LOG_LEVEL: info
   PORT: '8080'
@@ -18,10 +18,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: min-max-replicas-with-autoscaling
+    app: disable-hpa-1-replica-only
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling
+  name: disable-hpa-1-replica-only
 spec:
   template:
     metadata:
@@ -30,7 +30,7 @@ spec:
         fnatt.io/inject-ca-env: enabled
       labels:
         team: demoteam
-        app: min-max-replicas-with-autoscaling
+        app: disable-hpa-1-replica-only
         env: prod
     spec:
       securityContext: {}
@@ -49,25 +49,26 @@ spec:
         name: main
         envFrom:
         - configMapRef:
-            name: min-max-replicas-with-autoscaling-bced0901
+            name: disable-hpa-1-replica-only-9652a736
+  replicas: 1
   selector:
     matchLabels:
       team: demoteam
-      app: min-max-replicas-with-autoscaling
+      app: disable-hpa-1-replica-only
       env: prod
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   labels:
-    app: min-max-replicas-with-autoscaling
+    app: disable-hpa-1-replica-only
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling
+  name: disable-hpa-1-replica-only
 spec:
   ingressClassName: ingress-nginx-pm
   rules:
-  - host: min-max-replicas-with-autoscaling.prod.fnatt.no
+  - host: disable-hpa-1-replica-only.prod.fnatt.no
     http:
       paths:
       - path: /
@@ -75,24 +76,24 @@ spec:
           service:
             port:
               number: 80
-            name: min-max-replicas-with-autoscaling
+            name: disable-hpa-1-replica-only
         pathType: Prefix
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: min-max-replicas-with-autoscaling
+    app: disable-hpa-1-replica-only
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling
+  name: disable-hpa-1-replica-only
 spec:
   ports:
   - port: 80
     targetPort: 8080
   type: ClusterIP
   selector:
-    app: min-max-replicas-with-autoscaling
+    app: disable-hpa-1-replica-only
     env: prod
     team: demoteam
 ---
@@ -100,43 +101,14 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
-    app: min-max-replicas-with-autoscaling
+    app: disable-hpa-1-replica-only
     env: prod
     team: demoteam
-  name: min-max-replicas-with-autoscaling
+  name: disable-hpa-1-replica-only
 spec:
   minAvailable: 50%
   selector:
     matchLabels:
-      app: min-max-replicas-with-autoscaling
+      app: disable-hpa-1-replica-only
       env: prod
       team: demoteam
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  labels:
-    app: min-max-replicas-with-autoscaling
-    env: prod
-    team: demoteam
-  name: min-max-replicas-with-autoscaling
-spec:
-  maxReplicas: 20
-  minReplicas: 2
-  metrics:
-  - resource:
-      name: cpu
-      target:
-        averageUtilization: 70
-        type: Utilization
-    type: Resource
-  - resource:
-      name: memory
-      target:
-        averageUtilization: 70
-        type: Utilization
-    type: Resource
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: min-max-replicas-with-autoscaling
