@@ -77,6 +77,50 @@ spec:
               number: 80
             name: public-app
         pathType: Prefix
+  - host: my-public-app.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+  - host: my-public-app.polarismedia.no
+    http:
+      paths:
+      - path: /api/public
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+  - host: my-public-app.polarismedia.no
+    http:
+      paths:
+      - path: /public/
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+      - path: /can/have
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
+      - path: /multiple/paths
+        backend:
+          service:
+            port:
+              number: 80
+            name: public-app
+        pathType: Prefix
 ---
 apiVersion: v1
 kind: Service
@@ -140,59 +184,3 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: public-app
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  labels:
-    app: public-app
-    env: prod
-    team: demoteam
-  name: public-app-public
-spec:
-  ingressClassName: ingress-nginx-pm-public
-  rules:
-  - host: my-public-app.polarismedia.no
-    http:
-      paths:
-      - path: /
-        backend:
-          service:
-            port:
-              number: 80
-            name: public-app
-        pathType: Prefix
-  - host: my-public-app.polarismedia.no
-    http:
-      paths:
-      - path: /api/public
-        backend:
-          service:
-            port:
-              number: 80
-            name: public-app
-        pathType: Prefix
-  - host: my-public-app.polarismedia.no
-    http:
-      paths:
-      - path: /public/
-        backend:
-          service:
-            port:
-              number: 80
-            name: public-app
-        pathType: Prefix
-      - path: /can/have
-        backend:
-          service:
-            port:
-              number: 80
-            name: public-app
-        pathType: Prefix
-      - path: /multiple/paths
-        backend:
-          service:
-            port:
-              number: 80
-            name: public-app
-        pathType: Prefix
