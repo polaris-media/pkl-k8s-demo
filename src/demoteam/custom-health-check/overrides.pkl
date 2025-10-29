@@ -9,3 +9,8 @@ includeHealthCheck = true
 probePath = "/"
 probePort = 80
 
+images {
+  [module.app] {
+    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
+  }
+}

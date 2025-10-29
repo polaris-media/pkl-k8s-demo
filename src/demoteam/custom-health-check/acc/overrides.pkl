@@ -1,10 +1,3 @@
 amends "..."
 
-//Env-based overrides
-// Innherits healthcheck from ../overrides.pkl
-
-images {
-  [module.app] {
-    image = "nginxinc/nginx-unprivileged:alpine3.22-perl"
-  }
-}
+//Inherit health check from app overrides.pkl
