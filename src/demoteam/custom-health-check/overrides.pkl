@@ -2,6 +2,10 @@ amends "..."
 
 //App-based overrides
 
-// We use the same variables for both liveness and readiness probes
-probePath = "/custom/health-check" //Default is "/health/status"
-probePort =  8081 //Default is 8080
+// Change the path and the port for the health checks
+
+includeHealthCheck = true
+
+probePath = "/"
+probePort = 80
+
