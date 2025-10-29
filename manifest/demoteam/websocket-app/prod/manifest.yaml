@@ -80,6 +80,16 @@ spec:
               number: 80
             name: websocket-app
         pathType: Prefix
+  - host: websockets.polarismedia.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: websocket-app
+        pathType: Prefix
 ---
 apiVersion: v1
 kind: Service
@@ -143,25 +153,3 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: websocket-app
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  labels:
-    app: websocket-app
-    env: prod
-    team: demoteam
-  name: websocket-app-public
-spec:
-  ingressClassName: ingress-nginx-pm-public
-  rules:
-  - host: websockets.polarismedia.no
-    http:
-      paths:
-      - path: /
-        backend:
-          service:
-            port:
-              number: 80
-            name: websocket-app
-        pathType: Prefix
