@@ -41,7 +41,7 @@ spec:
           initialDelaySeconds: 10
           httpGet:
             path: /
-            port: 80
+            port: 8080
         resources:
           requests:
             cpu: '0.5'
@@ -58,7 +58,7 @@ spec:
           initialDelaySeconds: 10
           httpGet:
             path: /
-            port: 80
+            port: 8080
         envFrom:
         - configMapRef:
             name: custom-health-check-73bdc60e
