@@ -47,9 +47,10 @@ spec:
         ports:
         - containerPort: 8080
         command:
-        - node
+        - nginx
         args:
-        - ./index.js
+        - -g
+        - daemon off;
         name: main
         envFrom:
         - configMapRef:
