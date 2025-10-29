@@ -1,0 +1,161 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+  name: whats-in-a-name-5210fbbe
+data:
+  DD_ENV: acc
+  DD_LOGS: '[{"source":"nodejs", "service":"whats-in-a-name", "version":"alpine3.21-perl"}]'
+  DD_LOGS_INJECTION: 'true'
+  DD_SERVICE: whats-in-a-name
+  DD_VERSION: alpine3.21-perl
+  LOG_LEVEL: info
+  PORT: '8080'
+  TZ: Europe/Oslo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+  name: whats-in-a-name
+spec:
+  template:
+    metadata:
+      annotations:
+        fnatt.io/inject-ca-bundle: enabled
+        fnatt.io/inject-ca-env: enabled
+      labels:
+        team: demoteam2
+        app: whats-in-a-name
+        env: acc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - image: nginxinc/nginx-unprivileged:alpine3.21-perl
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        resources:
+          requests:
+            cpu: '0.5'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 8080
+        name: main
+        readinessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          httpGet:
+            path: /health/status
+            port: 8080
+        envFrom:
+        - configMapRef:
+            name: whats-in-a-name-5210fbbe
+  selector:
+    matchLabels:
+      team: demoteam2
+      app: whats-in-a-name
+      env: acc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+  name: whats-in-a-name
+spec:
+  ingressClassName: ingress-nginx-pm
+  rules:
+  - host: whats-in-a-name.acc.fnatt.no
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            port:
+              number: 80
+            name: whats-in-a-name
+        pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+  name: whats-in-a-name
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+  selector:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+  name: whats-in-a-name
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: whats-in-a-name
+      env: acc
+      team: demoteam2
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: whats-in-a-name
+    env: acc
+    team: demoteam2
+  name: whats-in-a-name
+spec:
+  maxReplicas: 4
+  minReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  - resource:
+      name: memory
+      target:
+        averageUtilization: 70
+        type: Utilization
+    type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: whats-in-a-name
