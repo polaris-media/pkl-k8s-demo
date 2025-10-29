@@ -1,0 +1,14 @@
+amends "..."
+
+// Sometimes we want an app to run with fixed set of pods
+
+// This will apply to both environments and enforce the app to just run with 1 replica
+includeHorizontalPodAutoscaler = false
+
+deployments {
+  [module.app] {
+    spec {
+      replicas = 1
+    }
+  }
+}
