@@ -3,7 +3,8 @@ amends "..."
 // Choose between a single "root" path like the first example
 // If you want to use multiple paths, you can add more entries to the `publicIngress
 // Rememember, only the paths you describe will be publicly accessible.
-publicIngressRules {
+
+privateIngressRules { // For demonstration purposes change back to publicIngressRules
   new {
     host = "my-public-app.polarismedia.no" // You can choose to use only this
     paths = List("/")
