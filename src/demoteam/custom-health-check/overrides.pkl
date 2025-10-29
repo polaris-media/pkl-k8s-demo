@@ -4,5 +4,5 @@ amends "..."
 
 // Change the path and the port for the health checks
 probePath = "/"
-probePort = 8080
+probePort = 80
 
