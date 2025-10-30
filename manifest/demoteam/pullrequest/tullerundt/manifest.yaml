@@ -68,13 +68,6 @@ spec:
       team: demoteam
       app: pullrequest
       env: tullerundt
-  minReadySeconds: 5
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 50%
-      maxUnavailable: 0%
-  progressDeadlineSeconds: 300
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
