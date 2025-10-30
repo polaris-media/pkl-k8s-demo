@@ -71,17 +71,6 @@ deployments {
           ["env"] = module.env
         }
       }
-      when (module.env == "tullerundt") {
-        strategy {
-          type = "RollingUpdate"
-          rollingUpdate {
-            maxUnavailable = "0%" // 0 pods can be unavailable during a deployment
-            maxSurge = "50%" // 50% more pods can be created during a deployment, not counting terminating pods
-          }
-        }
-        progressDeadlineSeconds = 300 // Mark as failed if not ready in 5 minutes
-        minReadySeconds = 5 // Ensure pods are ready before scaling down old replicaset, does not affect readiness/liveness probes and traffic
-      }
       template {
         metadata {
           labels {
